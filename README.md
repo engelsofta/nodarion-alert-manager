@@ -10,8 +10,8 @@
   [![Validate](https://img.shields.io/github/actions/workflow/status/engelsofta/nodarion-alert-manager/validate.yml?branch=main&style=flat-square&label=validation)](https://github.com/engelsofta/nodarion-alert-manager/actions/workflows/validate.yml)
   [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5?style=flat-square&logo=homeassistantcommunitystore)](https://www.hacs.xyz/)
   [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.1%2B-18BCF2?style=flat-square&logo=homeassistant)](https://www.home-assistant.io/)
-  [![ZIP downloads](https://img.shields.io/github/downloads/engelsofta/nodarion-alert-manager/latest/nodarion-alert-manager.zip?style=flat-square&label=ZIP%20downloads)](https://github.com/engelsofta/nodarion-alert-manager/releases/latest/download/nodarion-alert-manager.zip)
-  [![Total downloads](https://img.shields.io/github/downloads/engelsofta/nodarion-alert-manager/total?style=flat-square&label=all%20downloads)](https://github.com/engelsofta/nodarion-alert-manager/releases)
+  [![ZIP downloads](https://img.shields.io/github/downloads/engelsofta/nodarion-alert-manager/latest/nodarion-alert-manager.zip?style=flat-square&label=ZIP%20downloads&color=blue)](https://github.com/engelsofta/nodarion-alert-manager/releases/latest/download/nodarion-alert-manager.zip)
+  [![Total downloads](https://img.shields.io/github/downloads/engelsofta/nodarion-alert-manager/total?style=flat-square&label=all%20downloads&color=blue)](https://github.com/engelsofta/nodarion-alert-manager/releases)
   [![License](https://img.shields.io/github/license/engelsofta/nodarion-alert-manager?style=flat-square)](LICENSE)
 
   [English](#english) · [Deutsch](#deutsch)
