@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.8
+
+- Added the PNG brand asset required by HACS repository validation
+
 ## 0.7.7
 
 - Added the complete public HACS release, bilingual documentation and release automation

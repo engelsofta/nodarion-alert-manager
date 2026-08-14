@@ -48,6 +48,12 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertIn("custom_components/nodarion_pager", workflow)
         self.assertIn(f"zip -r ../../{ASSET} .", workflow)
 
+    def test_hacs_brand_icon_is_a_real_png(self) -> None:
+        icon = COMPONENT / "brand" / "icon.png"
+        data = icon.read_bytes()
+        self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n"))
+        self.assertGreater(len(data), 1024)
+
     def test_no_obvious_secrets_or_private_machine_paths(self) -> None:
         excluded = {".git", "__pycache__", ".pytest_cache", ".ruff_cache"}
         text_files = []
