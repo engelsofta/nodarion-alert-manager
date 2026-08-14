@@ -46,6 +46,7 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertIn(ASSET, workflow)
         self.assertIn("softprops/action-gh-release@v2", workflow)
         self.assertIn("custom_components/nodarion_pager", workflow)
+        self.assertIn(f"zip -r ../../{ASSET} .", workflow)
 
     def test_no_obvious_secrets_or_private_machine_paths(self) -> None:
         excluded = {".git", "__pycache__", ".pytest_cache", ".ruff_cache"}

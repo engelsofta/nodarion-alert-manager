@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           cd custom_components/nodarion_pager
-          zip -r ../../../nodarion-alert-manager.zip . \
+          zip -r ../../nodarion-alert-manager.zip . \
             -x "*/__pycache__/*" "*.pyc" "*.pyo" ".DS_Store"
 
       - name: Inspect archive

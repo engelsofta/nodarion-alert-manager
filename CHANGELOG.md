@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.7
+
+- Added the complete public HACS release, bilingual documentation and release automation
+- Added repository validation, privacy checks and community templates
+- Fixed the automated HACS ZIP output path
+
 ## 0.7.6
 
 - Separated entity search text from the selected entity in the rule wizard
