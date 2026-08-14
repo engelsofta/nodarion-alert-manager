@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 220" role="img" aria-label="Engelsoft Nodarion Pager">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f0cf78"/><stop offset="1" stop-color="#ad792a"/></linearGradient></defs>
+  <rect x="20" y="30" width="160" height="160" rx="44" fill="url(#g)"/>
+  <path fill="#29251e" d="M68 62h64a16 16 0 0 1 16 16v72a16 16 0 0 1-16 16H68a16 16 0 0 1-16-16V78a16 16 0 0 1 16-16Zm7 23v40h50V85H75Zm9 54a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm34 0a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z"/>
+  <text x="220" y="67" fill="#d7ad52" font-family="Arial,sans-serif" font-size="24" font-weight="700" letter-spacing="8">ENGELSOFT</text>
+  <text x="216" y="137" fill="#f4f1e9" font-family="Arial,sans-serif" font-size="66" font-weight="800">Nodarion</text>
+  <text x="530" y="137" fill="#d7ad52" font-family="Arial,sans-serif" font-size="66" font-weight="500">Pager</text>
+  <text x="220" y="174" fill="#a7a39a" font-family="Arial,sans-serif" font-size="20">ENTITY MONITORING &amp; ALERT CENTER</text>
+</svg>

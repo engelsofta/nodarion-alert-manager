@@ -1,0 +1,17 @@
+{
+  "title": "Engelsoft Nodarion Pager",
+  "config": {
+    "step": {"user": {"title": "Nodarion Pager einrichten", "description": "Richtet die lokale Überwachungs- und Alarmzentrale ein. Regeln werden anschließend in der Seitenleiste erstellt."}},
+    "abort": {"already_configured": "Nodarion Pager ist bereits eingerichtet."}
+  }
+  ,"issues": {
+    "missing_entity": {
+      "title": "Pager-Regel verweist auf eine fehlende Entität",
+      "description": "Die Regel {rule_name} verweist auf {entity_id}. Wähle eine andere Entität oder deaktiviere die Regel."
+    },
+    "missing_target": {
+      "title": "Pager-Benachrichtigungsziel fehlt",
+      "description": "Die Regel {rule_name} verweist auf das nicht verfügbare Ziel {target}. Wähle ein anderes Ziel oder entferne die Zuordnung."
+    }
+  }
+}

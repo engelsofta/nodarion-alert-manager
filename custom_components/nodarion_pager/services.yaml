@@ -1,0 +1,46 @@
+acknowledge:
+  fields:
+    alert_id:
+      required: true
+      selector:
+        text:
+resolve:
+  fields:
+    alert_id:
+      required: true
+      selector:
+        text:
+enable_rule:
+  fields:
+    rule_id:
+      required: true
+      selector:
+        text:
+disable_rule:
+  fields:
+    rule_id:
+      required: true
+      selector:
+        text:
+pause_rule:
+  fields:
+    rule_id:
+      required: true
+      selector:
+        text:
+    seconds:
+      default: 1800
+      selector:
+        number:
+          min: 0
+          max: 604800
+          unit_of_measurement: s
+maintenance:
+  fields:
+    seconds:
+      default: 3600
+      selector:
+        number:
+          min: 0
+          max: 604800
+          unit_of_measurement: s

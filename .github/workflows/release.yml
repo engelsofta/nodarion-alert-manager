@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build HACS release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate tag and manifest version
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest_version="$(python -c 'import json; print(json.load(open("custom_components/nodarion_pager/manifest.json"))["version"])')"
+          test "v${manifest_version}" = "${GITHUB_REF_NAME}"
+
+      - name: Build HACS ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd custom_components/nodarion_pager
+          zip -r ../../../nodarion-alert-manager.zip . \
+            -x "*/__pycache__/*" "*.pyc" "*.pyo" ".DS_Store"
+
+      - name: Inspect archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -t nodarion-alert-manager.zip
+          unzip -l nodarion-alert-manager.zip
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nodarion-alert-manager
+          path: nodarion-alert-manager.zip
+
+      - name: Publish GitHub release asset
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: nodarion-alert-manager.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true

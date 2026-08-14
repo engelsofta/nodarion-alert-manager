@@ -1,0 +1,17 @@
+{
+  "title": "Engelsoft Nodarion Pager",
+  "config": {
+    "step": {"user": {"title": "Set up Nodarion Pager", "description": "Set up the local monitoring and alert center. Rules are created from the sidebar afterwards."}},
+    "abort": {"already_configured": "Nodarion Pager is already configured."}
+  }
+  ,"issues": {
+    "missing_entity": {
+      "title": "Pager rule references a missing entity",
+      "description": "The rule {rule_name} references {entity_id}, which is not currently available. Select another entity or disable the rule."
+    },
+    "missing_target": {
+      "title": "Pager notification target is missing",
+      "description": "The rule {rule_name} references the unavailable notification target {target}. Select another target or remove the assignment."
+    }
+  }
+}

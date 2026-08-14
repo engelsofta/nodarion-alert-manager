@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a reproducible problem with Nodarion Alert Manager.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Nodarion. Remove tokens, private URLs and personal entity data before submitting.
+  - type: input
+    id: version
+    attributes:
+      label: Nodarion version
+      placeholder: 0.7.6
+    validations:
+      required: true
+  - type: input
+    id: home_assistant
+    attributes:
+      label: Home Assistant version
+    validations:
+      required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation method
+      options: [HACS, Manual]
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the expected and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Redact tokens, URLs, IP addresses, entity IDs and personal data.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I use the latest release.
+          required: true
+        - label: I removed private data and credentials.
+          required: true

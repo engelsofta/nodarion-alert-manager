@@ -1,0 +1,7 @@
+{
+  "name": "Nodarion Alert Manager",
+  "content_in_root": false,
+  "filename": "nodarion-alert-manager.zip",
+  "homeassistant": "2026.1.0",
+  "zip_release": true
+}

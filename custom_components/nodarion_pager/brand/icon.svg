@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Nodarion Pager">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f0cf78"/><stop offset="1" stop-color="#ad792a"/></linearGradient></defs>
+  <rect width="256" height="256" rx="70" fill="url(#g)"/>
+  <path fill="#29251e" d="M78 48h100a22 22 0 0 1 22 22v116a22 22 0 0 1-22 22H78a22 22 0 0 1-22-22V70a22 22 0 0 1 22-22Zm9 32a9 9 0 0 0-9 9v42a9 9 0 0 0 9 9h82a9 9 0 0 0 9-9V89a9 9 0 0 0-9-9H87Zm17 80a13 13 0 1 0 0 26 13 13 0 0 0 0-26Zm48 0a13 13 0 1 0 0 26 13 13 0 0 0 0-26Z"/>
+  <path fill="#d7ad52" d="M96 98h64v24H96z"/>
+</svg>
