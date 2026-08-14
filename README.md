@@ -23,6 +23,16 @@
 
 Nodarion Alert Manager ist eine vollständig lokal arbeitende Alarmzentrale für Home Assistant. Die Integration überwacht beliebige Entitäten, bewertet deren Zustände anhand frei konfigurierbarer Regeln und macht aus technischen Messwerten übersichtliche Alarme – inklusive Verzögerung, Quittierung, Eskalation, Zeitplan, Historie und Weiterleitung.
 
+### Ein Blick auf Nodarion
+
+![Nodarion Übersicht mit anonymisierten Demo-Daten](docs/images/nodarion-overview.png)
+
+Die Übersicht bündelt Alarmstatus, aktive Regeln und Historie in einer ruhigen, klaren Oberfläche.
+
+![Nodarion Regelliste mit anonymisierten Demo-Daten](docs/images/nodarion-rules.png)
+
+Regeln lassen sich durchsuchen, filtern, pausieren, bearbeiten und direkt auf ihren aktuellen Zustand prüfen.
+
 ### Warum Nodarion?
 
 - **Eine zentrale Alarmansicht:** aktive, ausstehende und quittierte Meldungen auf einen Blick
@@ -89,6 +99,16 @@ Die Regelauswertung, Historie und Konfiguration bleiben in deiner Home-Assistant
 ## English
 
 Nodarion Alert Manager is a fully local monitoring and alert center for Home Assistant. It watches any entity, evaluates configurable rules and turns raw states into clear alarms with delays, acknowledgement, escalation, schedules, history and notification routing.
+
+### Nodarion at a glance
+
+![Nodarion overview with anonymized demo data](docs/images/nodarion-overview.png)
+
+The dashboard brings alert health, active rules and recent history together in one calm, focused view.
+
+![Nodarion rule list with anonymized demo data](docs/images/nodarion-rules.png)
+
+Rules can be searched, filtered, paused, edited and checked against their current state at a glance.
 
 ### Why Nodarion?
 

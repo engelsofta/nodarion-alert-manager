@@ -38,6 +38,13 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertIn(ASSET, readme)
         self.assertIn("github/downloads/engelsofta/nodarion-alert-manager", readme)
         self.assertIn("hacs_repository", readme)
+        self.assertIn("docs/images/nodarion-overview.png", readme)
+        self.assertIn("docs/images/nodarion-rules.png", readme)
+
+        for screenshot in ("nodarion-overview.png", "nodarion-rules.png"):
+            data = (ROOT / "docs" / "images" / screenshot).read_bytes()
+            self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n"))
+            self.assertGreater(len(data), 10_000)
 
     def test_release_workflow_builds_the_hacs_asset(self) -> None:
         workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(
@@ -48,11 +55,11 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertIn("custom_components/nodarion_pager", workflow)
         self.assertIn(f"zip -r ../../{ASSET} .", workflow)
 
-    def test_hacs_brand_icon_is_a_real_png(self) -> None:
-        icon = COMPONENT / "brand" / "icon.png"
-        data = icon.read_bytes()
-        self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n"))
-        self.assertGreater(len(data), 1024)
+    def test_hacs_brand_images_are_real_png_files(self) -> None:
+        for filename in ("icon.png", "icon@2x.png", "logo.png", "logo@2x.png"):
+            data = (COMPONENT / "brand" / filename).read_bytes()
+            self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n"), filename)
+            self.assertGreater(len(data), 1024, filename)
 
     def test_no_obvious_secrets_or_private_machine_paths(self) -> None:
         excluded = {".git", "__pycache__", ".pytest_cache", ".ruff_cache"}

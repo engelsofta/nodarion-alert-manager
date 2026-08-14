@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.9
+
+- Added anonymized product screenshots to the German and English README sections
+- Added complete local icon and logo PNG assets for HACS and Home Assistant
+
 ## 0.7.8
 
 - Added the PNG brand asset required by HACS repository validation
