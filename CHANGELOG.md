@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.0
+
+- Added a prominent visual trigger explanation to active alarms on the overview and alarm pages
+- Shows the current value alongside the configured condition, delay, unavailable timeout or heartbeat timeout
+
 ## 0.7.9
 
 - Added anonymized product screenshots to the German and English README sections
