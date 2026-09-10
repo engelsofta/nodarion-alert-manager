@@ -73,7 +73,13 @@ Live Activities appear on the iOS Lock Screen and Dynamic Island. Android Live U
 
 ![Nodarion overview with anonymized demo data](docs/images/nodarion-overview.png)
 
-![Nodarion rule list with anonymized demo data](docs/images/nodarion-rules.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nodarion-rules-dark-anonymized.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/nodarion-rules-light-anonymized.png">
+  <img alt="Nodarion rule list with anonymized demo data" src="docs/images/nodarion-rules-light-anonymized.png">
+</picture>
+
+*The rule center automatically shown in GitHub's matching light or dark theme. All entities and recipients are fictional demo data.*
 
 ### Install with HACS
 
@@ -208,7 +214,13 @@ Unter iOS erscheinen Live Activities auf Sperrbildschirm und Dynamic Island. And
 
 ![Nodarion Übersicht mit anonymisierten Demo-Daten](docs/images/nodarion-overview.png)
 
-![Nodarion Regelliste mit anonymisierten Demo-Daten](docs/images/nodarion-rules.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nodarion-rules-dark-anonymized.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/nodarion-rules-light-anonymized.png">
+  <img alt="Nodarion Regelliste mit anonymisierten Demo-Daten" src="docs/images/nodarion-rules-light-anonymized.png">
+</picture>
+
+*Die Regelzentrale erscheint passend zum GitHub-Theme in Hell oder Dunkel. Sämtliche Entitäten und Empfänger sind frei erfundene Demo-Daten.*
 
 ### Installation über HACS
 

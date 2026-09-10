@@ -39,9 +39,14 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertIn("github/downloads/engelsofta/nodarion-alert-manager", readme)
         self.assertIn("hacs_repository", readme)
         self.assertIn("docs/images/nodarion-overview.png", readme)
-        self.assertIn("docs/images/nodarion-rules.png", readme)
+        self.assertIn("docs/images/nodarion-rules-light-anonymized.png", readme)
+        self.assertIn("docs/images/nodarion-rules-dark-anonymized.png", readme)
 
-        for screenshot in ("nodarion-overview.png", "nodarion-rules.png"):
+        for screenshot in (
+            "nodarion-overview.png",
+            "nodarion-rules-light-anonymized.png",
+            "nodarion-rules-dark-anonymized.png",
+        ):
             data = (ROOT / "docs" / "images" / screenshot).read_bytes()
             self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n"))
             self.assertGreater(len(data), 10_000)
