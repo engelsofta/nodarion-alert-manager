@@ -1,5 +1,5 @@
 {
-  "title": "Engelsoft Nodarion Pager",
+  "title": "Nodarion Pager",
   "config": {
     "step": {"user": {"title": "Nodarion Pager einrichten", "description": "Richtet die lokale Überwachungs- und Alarmzentrale ein. Regeln werden anschließend in der Seitenleiste erstellt."}},
     "abort": {"already_configured": "Nodarion Pager ist bereits eingerichtet."}

@@ -2,12 +2,27 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
 from .const import OPERATORS, RESET_MODES, RULE_KINDS, SEVERITIES, UNAVAILABLE_BEHAVIORS
+
+
+def _conditions(data: Any, field_name: str) -> list[dict[str, Any]]:
+    items = [dict(item) for item in data or [] if isinstance(item, dict)]
+    if not items:
+        raise ValueError(f"{field_name} requires at least one condition")
+    for item in items:
+        if not item.get("entity_id") or "." not in str(item["entity_id"]):
+            raise ValueError(f"invalid {field_name} entity")
+        if item.get("operator", "eq") not in OPERATORS:
+            raise ValueError(f"invalid {field_name} operator")
+        if item.get("value") in (None, ""):
+            raise ValueError(f"invalid {field_name} value")
+    return items
 
 
 @dataclass(slots=True)
@@ -106,6 +121,99 @@ class Rule:
                 raise ValueError("invalid escalation")
         if self.paused_until:
             datetime.fromisoformat(self.paused_until)
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(slots=True)
+class LiveActivity:
+    """A non-alarm process shown by the Home Assistant companion app."""
+
+    id: str
+    name: str
+    start_conditions: list[dict[str, Any]]
+    end_conditions: list[dict[str, Any]]
+    title: str
+    message_template: str
+    critical_text_template: str | None = None
+    condition_mode: str = "and"
+    end_condition_mode: str = "or"
+    progress_entity: str | None = None
+    progress_attribute: str | None = None
+    progress_max: float = 100
+    progress_bar_direction: str = "increasing"
+    remaining_time_entity: str | None = None
+    remaining_time_attribute: str | None = None
+    remaining_time_unit: str = "minutes"
+    icon: str = "mdi:progress-clock"
+    color: str = "#2196f3"
+    url: str | None = None
+    notification_targets: list[str] = field(default_factory=list)
+    update_entities: list[str] = field(default_factory=list)
+    minimum_update_interval: float = 30
+    maximum_runtime: float = 0
+    enabled: bool = True
+    created_at: str = field(default_factory=lambda: datetime.now().astimezone().isoformat())
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> LiveActivity:
+        item = cls(
+            id=str(data.get("id") or uuid4()),
+            name=str(data.get("name") or "New live activity").strip(),
+            start_conditions=_conditions(data.get("start_conditions"), "start_conditions"),
+            end_conditions=_conditions(data.get("end_conditions"), "end_conditions"),
+            title=str(data.get("title") or data.get("name") or "Live Activity").strip(),
+            message_template=str(data.get("message_template") or "{name}").strip(),
+            critical_text_template=(str(data["critical_text_template"]).strip() if data.get("critical_text_template") else None),
+            condition_mode=str(data.get("condition_mode") or "and"),
+            end_condition_mode=str(data.get("end_condition_mode") or "or"),
+            progress_entity=(str(data["progress_entity"]).strip() if data.get("progress_entity") else None),
+            progress_attribute=(str(data["progress_attribute"]).strip() if data.get("progress_attribute") else None),
+            progress_max=max(0.000001, float(data.get("progress_max") or 100)),
+            progress_bar_direction=str(data.get("progress_bar_direction") or "increasing"),
+            remaining_time_entity=(str(data["remaining_time_entity"]).strip() if data.get("remaining_time_entity") else None),
+            remaining_time_attribute=(str(data["remaining_time_attribute"]).strip() if data.get("remaining_time_attribute") else None),
+            remaining_time_unit=str(data.get("remaining_time_unit") or "minutes"),
+            icon=str(data.get("icon") or "mdi:progress-clock").strip(),
+            color=str(data.get("color") or "#2196f3").strip().lower(),
+            url=(str(data["url"]).strip() if data.get("url") else None),
+            notification_targets=[str(value) for value in data.get("notification_targets", []) if isinstance(value, str)],
+            update_entities=[str(value).strip() for value in data.get("update_entities", []) if isinstance(value, str) and "." in value],
+            minimum_update_interval=max(0, float(data.get("minimum_update_interval") or 0)),
+            maximum_runtime=max(0, float(data.get("maximum_runtime") or 0)),
+            enabled=bool(data.get("enabled", True)),
+            created_at=str(data.get("created_at") or datetime.now().astimezone().isoformat()),
+        )
+        item.validate()
+        return item
+
+    def validate(self) -> None:
+        if not self.name or not self.title or not self.message_template:
+            raise ValueError("name, title and message are required")
+        if self.condition_mode not in {"and", "or"} or self.end_condition_mode not in {"and", "or"}:
+            raise ValueError("invalid condition mode")
+        if self.progress_bar_direction not in {"increasing", "decreasing"}:
+            raise ValueError("invalid progress bar direction")
+        if self.remaining_time_unit not in {"seconds", "minutes", "timestamp"}:
+            raise ValueError("invalid remaining time unit")
+        if len(self.color) != 7 or not self.color.startswith("#") or any(char not in "0123456789abcdef" for char in self.color[1:]):
+            raise ValueError("color must be a hex value")
+        for entity_id in (self.progress_entity, self.remaining_time_entity):
+            if entity_id and "." not in entity_id:
+                raise ValueError("invalid display entity")
+
+    def watched_entities(self) -> set[str]:
+        entities = {
+            *[str(item["entity_id"]) for item in self.start_conditions],
+            *[str(item["entity_id"]) for item in self.end_conditions],
+            *([self.progress_entity] if self.progress_entity else []),
+            *([self.remaining_time_entity] if self.remaining_time_entity else []),
+            *self.update_entities,
+        }
+        for template in (self.title, self.message_template, self.critical_text_template or ""):
+            entities.update(token for token in re.findall(r"\{([^{}]+)\}", template) if "." in token)
+        return entities
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)

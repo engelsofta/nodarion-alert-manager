@@ -62,7 +62,7 @@ class ReleaseContractTests(unittest.TestCase):
             self.assertGreater(len(data), 1024, filename)
 
     def test_no_obvious_secrets_or_private_machine_paths(self) -> None:
-        excluded = {".git", "__pycache__", ".pytest_cache", ".ruff_cache"}
+        excluded = {".git", ".venv", "__pycache__", ".pytest_cache", ".ruff_cache"}
         text_files = []
         for path in ROOT.rglob("*"):
             if not path.is_file() or any(part in excluded for part in path.parts):

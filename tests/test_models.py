@@ -1,6 +1,6 @@
 """Tests for Pager's standalone rule comparisons."""
 
-from custom_components.nodarion_pager.models import Rule, matches, matches_condition
+from custom_components.nodarion_pager.models import LiveActivity, Rule, matches, matches_condition
 
 
 def rule(operator="gt", value=10, upper=None, hysteresis=0):
@@ -98,3 +98,30 @@ def test_extended_rule_fields_round_trip():
 
 def test_additional_condition_comparison():
     assert matches_condition({"entity_id": "switch.pump", "operator": "eq", "value": "on"}, "ON")
+
+
+def test_live_activity_round_trip():
+    activity = LiveActivity.from_dict({
+        "name": "Waschmaschine",
+        "start_conditions": [{"entity_id": "switch.washer", "operator": "eq", "value": "on"}],
+        "end_conditions": [{"entity_id": "switch.washer", "operator": "eq", "value": "off"}],
+        "title": "Waschmaschine",
+        "message_template": "{sensor.washer_phase}",
+        "progress_entity": "sensor.washer_progress",
+        "remaining_time_entity": "sensor.washer_remaining",
+        "notification_targets": ["service:notify.mobile_app_phone"],
+    })
+    saved = activity.as_dict()
+    assert saved["remaining_time_unit"] == "minutes"
+    assert saved["progress_max"] == 100
+    assert activity.watched_entities() == {
+        "switch.washer", "sensor.washer_phase", "sensor.washer_progress", "sensor.washer_remaining",
+    }
+
+
+def test_live_activity_requires_start_and_end_conditions():
+    try:
+        LiveActivity.from_dict({"name": "Broken", "title": "Broken", "message_template": "State"})
+    except ValueError:
+        return
+    raise AssertionError("live activity without conditions accepted")

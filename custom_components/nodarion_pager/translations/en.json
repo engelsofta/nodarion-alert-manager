@@ -1,5 +1,5 @@
 {
-  "title": "Engelsoft Nodarion Pager",
+  "title": "Nodarion Pager",
   "config": {
     "step": {"user": {"title": "Set up Nodarion Pager", "description": "Set up the local monitoring and alert center. Rules are created from the sidebar afterwards."}},
     "abort": {"already_configured": "Nodarion Pager is already configured."}

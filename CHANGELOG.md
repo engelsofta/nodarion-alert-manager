@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.0.0 — 2026-09-10
+
+### Headline feature: Live Activities
+
+- Added an independent Live Activity engine for running processes such as washing machines, robotic mowers, charging sessions and deliveries
+- Added separate start and end conditions, dynamic entity placeholders, progress bars and on-device countdowns
+- Added configurable icons, colors, tap destinations, target devices, update throttling and maximum runtimes
+- Added reliable lifecycle handling across Home Assistant restarts, configuration changes, disabling and deletion
+- Added a safe ten-second test activity that cannot interfere with a real running activity
+- Added a spacious three-step setup wizard with searchable entity pickers and a phone-style preview
+- Prevented Home Assistant background updates from stealing focus while an activity is edited
+
+### Alerting and operations
+
+- Added threshold, digital/I/O, fault and heartbeat rules in one local monitoring engine
+- Added delays, hysteresis, cooldowns, schedules, maintenance windows and per-rule pauses
+- Added acknowledgement, manual or automatic resolution, repeats and multi-stage escalation
+- Added recipient routing by rule and severity with optional resolved notifications
+- Added a focused dashboard, alarm history, comments, Recorder charts, diagnostics and Home Assistant Repairs
+
+### Release quality
+
+- Added bilingual, responsive administration for desktop and mobile
+- Added privacy-conscious diagnostics and automated repository privacy checks
+- Added HACS, Hassfest, Python, frontend and release-contract validation workflows
+- Raised the minimum supported Home Assistant version to 2026.7.0 for Live Activity support
+
 ## 0.8.0
 
 - Added a prominent visual trigger explanation to active alarms on the overview and alarm pages

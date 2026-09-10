@@ -24,7 +24,7 @@ jobs:
           python-version: "3.13"
           cache: pip
       - name: Install test dependencies
-        run: python -m pip install --upgrade pytest ruff homeassistant
+        run: python -m pip install --upgrade pytest ruff "homeassistant>=2026.7.0"
       - name: Run tests
         run: python -m pytest
       - name: Run Ruff

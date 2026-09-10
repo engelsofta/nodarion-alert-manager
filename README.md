@@ -1,17 +1,18 @@
-# Nodarion Alert Manager for Home Assistant
+# Nodarion Pager for Home Assistant
 
 <div align="center">
-  <img src="custom_components/nodarion_pager/brand/logo.svg" alt="Nodarion Alert Manager" width="420">
+  <img src="custom_components/nodarion_pager/brand/logo.svg" alt="Nodarion Pager" width="420">
 
-  **Turn entity states into clear, actionable and acknowledgeable alerts.**<br>
-  **Aus Entitätszuständen werden verständliche, quittierbare Alarme.**
+  ### Your home has a lot to say. Nodarion knows when it should beep.
+  ### Dein Zuhause hat viel zu sagen. Nodarion weiß, wann es piepen muss.
+
+  A local alert center **and** Live Activity engine for Home Assistant.
 
   [![Release](https://img.shields.io/github/v/release/engelsofta/nodarion-alert-manager?style=flat-square)](https://github.com/engelsofta/nodarion-alert-manager/releases/latest)
-  [![Validate](https://img.shields.io/github/actions/workflow/status/engelsofta/nodarion-alert-manager/validate.yml?branch=main&style=flat-square&label=validation)](https://github.com/engelsofta/nodarion-alert-manager/actions/workflows/validate.yml)
+  [![Validation](https://img.shields.io/github/actions/workflow/status/engelsofta/nodarion-alert-manager/validate.yml?branch=main&style=flat-square&label=validation)](https://github.com/engelsofta/nodarion-alert-manager/actions/workflows/validate.yml)
   [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5?style=flat-square&logo=homeassistantcommunitystore)](https://www.hacs.xyz/)
-  [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.1%2B-18BCF2?style=flat-square&logo=homeassistant)](https://www.home-assistant.io/)
+  [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.7%2B-18BCF2?style=flat-square&logo=homeassistant)](https://www.home-assistant.io/)
   [![ZIP downloads](https://img.shields.io/github/downloads/engelsofta/nodarion-alert-manager/latest/nodarion-alert-manager.zip?style=flat-square&label=ZIP%20downloads&color=blue)](https://github.com/engelsofta/nodarion-alert-manager/releases/latest/download/nodarion-alert-manager.zip)
-  [![Total downloads](https://img.shields.io/github/downloads/engelsofta/nodarion-alert-manager/total?style=flat-square&label=all%20downloads&color=blue)](https://github.com/engelsofta/nodarion-alert-manager/releases)
   [![License](https://img.shields.io/github/license/engelsofta/nodarion-alert-manager?style=flat-square)](LICENSE)
 
   [English](#english) · [Deutsch](#deutsch)
@@ -21,157 +22,283 @@
 
 ## English
 
-Nodarion Alert Manager is a fully local monitoring and alert center for Home Assistant. It watches any entity, evaluates configurable rules and turns raw states into clear alarms with delays, acknowledgement, escalation, schedules, history and notification routing.
+Nodarion Pager turns Home Assistant entities into an operations-ready monitoring center. It detects abnormal states, suppresses short-lived noise, routes actionable alerts and keeps a traceable history. Its independent **Live Activity engine** also puts normal running processes—washing, mowing, charging or deliveries—directly on a compatible phone's Lock Screen and Dynamic Island.
 
-### Nodarion at a glance
-
-![Nodarion overview with anonymized demo data](docs/images/nodarion-overview.png)
-
-The dashboard brings alert health, active rules and recent history together in one calm, focused view.
-
-![Nodarion rule list with anonymized demo data](docs/images/nodarion-rules.png)
-
-Rules can be searched, filtered, paused, edited and checked against their current state at a glance.
+Everything is configured from a responsive Home Assistant panel and evaluated locally.
 
 ### Why Nodarion?
 
-- **One central alert view:** see active, pending and acknowledged alerts at a glance
-- **Guided rule wizard:** select an entity, define the condition, configure alerting and confirm the live summary
-- **Flexible rules:** thresholds, digital/I/O states, faults and heartbeats
-- **Fewer false alarms:** delays, hysteresis, cooldown and configurable `unknown`/`unavailable` handling
-- **Targeted notifications:** recipients and severity per rule, repetitions and escalation stages
-- **Operations ready:** maintenance mode, rule pauses, automatic or manual reset and schedules
-- **Traceable:** alert history, comments, diagnostics and Recorder-based charts
-- **Privacy friendly:** processing and storage stay inside Home Assistant
-- **Bilingual and responsive:** German and English UI for desktop and mobile
+| Capability | Benefit |
+| --- | --- |
+| Central alarm dashboard | One calm view for active, pending and acknowledged alerts |
+| Four rule types | Monitor numeric thresholds, digital states, faults and missing heartbeats |
+| Noise control | Delay, hysteresis and cooldown prevent alerts from brief spikes |
+| Operational controls | Maintenance windows, schedules and rule pauses avoid expected downtime noise |
+| Escalation | Repeat or raise severity while an alert remains unresolved |
+| Notification routing | Choose recipients per rule and escalation stage |
+| Explainable alerts | See the current value and exact condition that caused an alert |
+| Traceability | History, comments, Recorder charts and privacy-conscious diagnostics |
+| Local processing | No Nodarion cloud, tracking or telemetry |
+
+### Live Activities: running information that stays in sight
+
+> The washing machine is running—and now the information runs with it.
+
+Live Activities are independent from alarm rules. They are designed for useful, non-fault states such as:
+
+- a washing machine or dryer with phase, progress and remaining time;
+- a robotic mower currently mowing, returning or charging;
+- an EV charging session with battery percentage;
+- a dishwasher, oven, 3D printer or long-running Home Assistant script;
+- a delivery or any process represented by Home Assistant entities.
+
+Every Live Activity supports:
+
+- independent start and end conditions;
+- searchable entity selection by name or entity ID;
+- dynamic `{entity.id}` placeholders in title and text;
+- an optional progress entity and configurable maximum;
+- remaining time in seconds, minutes or as an end timestamp;
+- an on-device countdown without minute-by-minute push traffic;
+- icon, color and a Home Assistant tap destination;
+- per-device delivery to `notify.mobile_app_*` services;
+- update throttling and an optional maximum runtime;
+- restoration after a Home Assistant restart;
+- cleanup when the process ends, is disabled or deleted;
+- a safe test activity that closes itself after ten seconds.
+
+Live Activities appear on the iOS Lock Screen and Dynamic Island. Android Live Updates appear in supported system surfaces. Support requires Home Assistant 2026.7.0 or later, a compatible Companion App/device and a working connection between the device and Home Assistant.
+
+### Screenshots
+
+![Nodarion overview with anonymized demo data](docs/images/nodarion-overview.png)
+
+![Nodarion rule list with anonymized demo data](docs/images/nodarion-rules.png)
 
 ### Install with HACS
 
-1. Open HACS and select **Integrations**.
-2. Open the menu in the top-right corner and choose **Custom repositories**.
-3. Add `https://github.com/engelsofta/nodarion-alert-manager` as an **Integration** repository.
-4. Install **Nodarion Alert Manager** and restart Home Assistant.
+1. Open **HACS → Integrations**.
+2. Open the top-right menu and select **Custom repositories**.
+3. Add `https://github.com/engelsofta/nodarion-alert-manager` as an **Integration**.
+4. Install **Nodarion Pager** and restart Home Assistant.
 5. Open **Settings → Devices & services → Add integration**.
-6. Search for **Engelsoft Nodarion Pager** and finish setup.
-7. Open **Nodarion Pager** from the sidebar and create your first rule.
+6. Search for **Nodarion Pager** and complete setup.
+7. Open **Nodarion Pager** from the sidebar.
 
 [![Add HACS repository](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=engelsofta&repository=nodarion-alert-manager&category=integration)
 
 ### Manual installation
 
-1. Download [`nodarion-alert-manager.zip`](https://github.com/engelsofta/nodarion-alert-manager/releases/latest/download/nodarion-alert-manager.zip) from the latest release.
-2. Extract its contents into `/config/custom_components/nodarion_pager/`.
-3. Restart Home Assistant and add the integration from **Devices & services**.
+1. Download [`nodarion-alert-manager.zip`](https://github.com/engelsofta/nodarion-alert-manager/releases/latest/download/nodarion-alert-manager.zip).
+2. Extract it to `/config/custom_components/nodarion_pager/`.
+3. Restart Home Assistant.
+4. Add **Nodarion Pager** from **Settings → Devices & services**.
 
-Minimum supported version: **Home Assistant 2026.1.0**.
+Minimum supported version: **Home Assistant 2026.7.0**.
 
-### Rule types
+### Alert rules
 
-| Type | Purpose |
+| Type | Use case |
 | --- | --- |
-| **Threshold** | Numeric values using `=`, `≠`, `>`, `<`, `≥`, `≤`, between or outside |
-| **Digital / I/O** | States such as `on`, `off`, `open`, `closed`, `1` or `0` |
-| **Fault** | A state rule with a visible Home Assistant fault notification |
-| **Heartbeat** | Alert when an entity stops changing within a configured time window |
+| Threshold | Numeric `=`, `≠`, `>`, `<`, `≥`, `≤`, between and outside comparisons |
+| Digital / I/O | States such as `on`, `off`, `open`, `closed`, `1` or `0` |
+| Fault | A state rule plus a visible persistent Home Assistant fault notification |
+| Heartbeat | Alert when an entity stops changing for a configured period |
 
-### Example
+Rules can add further entity conditions using AND/OR logic, schedules, delayed unavailable handling, automatic or manual reset, escalation stages and selected notification recipients.
 
-Monitor `sensor.boiler_temperature` with **greater than 70 for 20 seconds**. Short spikes are ignored; only a sustained high value creates an alert. Add hysteresis, a schedule and escalation for dependable operational monitoring.
+### Actions
 
-### Notifications
+| Action | Purpose |
+| --- | --- |
+| `nodarion_pager.acknowledge` | Mark an active alert as acknowledged and stop repeats |
+| `nodarion_pager.resolve` | Resolve an active alert manually |
+| `nodarion_pager.enable_rule` | Enable a rule by ID |
+| `nodarion_pager.disable_rule` | Disable a rule and resolve its active alerts |
+| `nodarion_pager.pause_rule` | Pause a rule for a number of seconds |
+| `nodarion_pager.maintenance` | Start or stop a global maintenance window |
 
-Nodarion discovers modern `notify` entities and available `notify.*` services. Recipients, severity, repetition and escalation can be configured per rule. Resolved notifications can be enabled separately.
+The required IDs are included in exported rule data and event payloads. Most day-to-day operations are easier from the Nodarion panel.
 
-### Home Assistant events
+### Events, conditions and updates
 
 | Event | Meaning |
 | --- | --- |
 | `nodarion_pager_alert` | A rule triggered or repeated |
-| `nodarion_pager_resolved` | An alert was reset |
+| `nodarion_pager_resolved` | An alert was resolved |
 | `nodarion_pager_acknowledged` | An alert was acknowledged |
 
-### Privacy
+These events can be used as Home Assistant automation triggers. Nodarion does not add custom automation condition types; its rule conditions are configured in the panel.
 
-Rule evaluation, history and configuration remain inside your Home Assistant instance. Nodarion has no cloud connection, tracking or telemetry. Data only leaves Home Assistant when you explicitly configure an external notification service as a recipient.
+Nodarion listens to Home Assistant state-change events instead of polling devices. A one-minute housekeeping cycle handles schedules, timeouts, repeats, escalation and long-running Live Activities. Configuration, runtime state and history use Home Assistant's local storage helper.
+
+### Known limitations
+
+- Live Activities require a legacy-style `notify.mobile_app_*` service because the complete structured payload is needed.
+- The Companion App and operating system control final presentation and delivery timing.
+- iOS can throttle excessive remote updates and limits activity lifetime; Nodarion throttles updates and periodically refreshes long-running activities.
+- Nodarion monitors existing Home Assistant entities; it does not communicate with appliances directly.
+
+### Troubleshooting
+
+- Restart Home Assistant and clear the browser cache after updating.
+- Confirm selected entities and notification services still exist.
+- For Live Activities, verify Companion App permissions, connectivity and Home Assistant 2026.7.0 or later.
+- Check **Settings → System → Repairs** for missing references.
+- Download integration diagnostics when reporting an issue; sensitive values are redacted automatically.
+
+### Removal
+
+1. Delete **Nodarion Pager** from **Settings → Devices & services**.
+2. Remove `custom_components/nodarion_pager/` or uninstall it through HACS.
+3. Restart Home Assistant.
+
+Finish active Live Activities before uninstalling so their final clear command can reach the Companion App.
+
+### Privacy and security
+
+Rule evaluation, configuration and history stay inside Home Assistant. Nodarion has no external API, cloud account, analytics or telemetry. Data leaves Home Assistant only through notification targets explicitly selected by an administrator. Diagnostics redact entity IDs, names, values, comments and user IDs. Report security issues privately through the [security advisory form](https://github.com/engelsofta/nodarion-alert-manager/security/advisories/new).
 
 ---
 
 ## Deutsch
 
-Nodarion Alert Manager ist eine vollständig lokal arbeitende Alarmzentrale für Home Assistant. Die Integration überwacht beliebige Entitäten, bewertet deren Zustände anhand frei konfigurierbarer Regeln und macht aus technischen Messwerten übersichtliche Alarme – inklusive Verzögerung, Quittierung, Eskalation, Zeitplan, Historie und Weiterleitung.
+Nodarion Pager macht aus Home-Assistant-Entitäten eine betriebstaugliche Überwachungs- und Alarmzentrale. Die Integration erkennt ungewöhnliche Zustände, filtert kurze Störungen heraus, leitet Alarme gezielt weiter und führt eine nachvollziehbare Historie. Die unabhängige **Live-Activity-Engine** bringt zusätzlich ganz normale laufende Vorgänge—Waschen, Mähen, Laden oder Lieferungen—direkt auf Sperrbildschirm und Dynamic Island kompatibler Smartphones.
 
-### Ein Blick auf Nodarion
-
-![Nodarion Übersicht mit anonymisierten Demo-Daten](docs/images/nodarion-overview.png)
-
-Die Übersicht bündelt Alarmstatus, aktive Regeln und Historie in einer ruhigen, klaren Oberfläche.
-
-![Nodarion Regelliste mit anonymisierten Demo-Daten](docs/images/nodarion-rules.png)
-
-Regeln lassen sich durchsuchen, filtern, pausieren, bearbeiten und direkt auf ihren aktuellen Zustand prüfen.
+Alles wird über eine responsive Home-Assistant-Oberfläche eingerichtet und lokal ausgewertet.
 
 ### Warum Nodarion?
 
-- **Eine zentrale Alarmansicht:** aktive, ausstehende und quittierte Meldungen auf einen Blick
-- **Einfacher Regel-Wizard:** Entität auswählen, Bedingung festlegen, Alarmierung konfigurieren und Zusammenfassung bestätigen
-- **Flexible Regeln:** Grenzwerte, Digital-/I/O-Zustände, Störungen und Heartbeats
-- **Weniger Fehlalarme:** Verzögerung, Hysterese, Cooldown und Verhalten bei `unknown`/`unavailable`
-- **Gezielte Alarmierung:** Empfänger und Prioritäten pro Regel, Wiederholungen und Eskalationsstufen
-- **Betriebsgerecht:** Wartungsmodus, Regelpausen, automatische oder manuelle Rücksetzung und Zeitpläne
-- **Nachvollziehbar:** Alarmhistorie, Kommentare, Diagnoseinformationen und Recorder-Diagramme
-- **Datenschutzfreundlich:** Verarbeitung und Speicherung erfolgen lokal in Home Assistant
-- **Zweisprachig und responsiv:** deutsche und englische Oberfläche für Desktop und Mobilgeräte
+| Funktion | Vorteil |
+| --- | --- |
+| Zentrale Alarmübersicht | Aktive, ausstehende und quittierte Meldungen in einer ruhigen Ansicht |
+| Vier Regeltypen | Grenzwerte, digitale Zustände, Störungen und fehlende Heartbeats überwachen |
+| Schutz vor Fehlalarmen | Verzögerung, Hysterese und Cooldown filtern kurze Ausreißer |
+| Betriebsgerechte Steuerung | Wartungsfenster, Zeitpläne und Regelpausen berücksichtigen geplante Stillstände |
+| Eskalation | Wiederholen oder Priorität erhöhen, solange ein Problem ungelöst bleibt |
+| Gezielte Weiterleitung | Empfänger pro Regel und Eskalationsstufe auswählen |
+| Verständliche Alarme | Aktuellen Wert und konkrete Auslösebedingung direkt sehen |
+| Nachvollziehbarkeit | Historie, Kommentare, Recorder-Diagramme und datensparsame Diagnosen |
+| Lokale Verarbeitung | Keine Nodarion-Cloud, kein Tracking und keine Telemetrie |
+
+### Live Activities: laufende Informationen, die im Blick bleiben
+
+> Die Waschmaschine läuft. Die Information läuft einfach mit.
+
+Live Activities sind unabhängig von Alarmregeln. Sie eignen sich unter anderem für Waschmaschinen, Trockner, Mähroboter, Elektroautos, Geschirrspüler, Backöfen, 3D-Drucker, Lieferungen und lange Home-Assistant-Skripte.
+
+Jede Live Activity unterstützt:
+
+- getrennte Start- und Endbedingungen;
+- durchsuchbare Entitätsauswahl nach Name oder Entity-ID;
+- dynamische `{entity.id}`-Platzhalter in Titel und Text;
+- eine optionale Fortschrittsentität mit frei wählbarem Maximum;
+- Restlaufzeit in Sekunden, Minuten oder als Endzeitpunkt;
+- einen auf dem Smartphone laufenden Countdown ohne minütliche Push-Flut;
+- Symbol, Farbe und Home-Assistant-Ziel beim Antippen;
+- Auswahl einzelner `notify.mobile_app_*`-Geräte;
+- Drosselung von Aktualisierungen und eine optionale maximale Laufzeit;
+- Wiederherstellung nach einem Home-Assistant-Neustart;
+- automatisches Schließen bei Ende, Deaktivierung oder Löschen;
+- eine sichere Test-Activity, die sich nach zehn Sekunden selbst beendet.
+
+Unter iOS erscheinen Live Activities auf Sperrbildschirm und Dynamic Island. Android Live Updates werden auf unterstützten Systemflächen angezeigt. Benötigt werden Home Assistant 2026.7.0 oder neuer, ein kompatibles Gerät mit Companion App und eine funktionierende Verbindung zu Home Assistant.
+
+### Screenshots
+
+![Nodarion Übersicht mit anonymisierten Demo-Daten](docs/images/nodarion-overview.png)
+
+![Nodarion Regelliste mit anonymisierten Demo-Daten](docs/images/nodarion-rules.png)
 
 ### Installation über HACS
 
-1. Öffne HACS und wähle **Integrationen**.
-2. Öffne das Menü oben rechts und wähle **Benutzerdefinierte Repositories**.
-3. Füge `https://github.com/engelsofta/nodarion-alert-manager` als Kategorie **Integration** hinzu.
-4. Installiere **Nodarion Alert Manager** und starte Home Assistant neu.
+1. Öffne **HACS → Integrationen**.
+2. Wähle oben rechts **Benutzerdefinierte Repositories**.
+3. Füge `https://github.com/engelsofta/nodarion-alert-manager` als **Integration** hinzu.
+4. Installiere **Nodarion Pager** und starte Home Assistant neu.
 5. Öffne **Einstellungen → Geräte & Dienste → Integration hinzufügen**.
-6. Suche nach **Engelsoft Nodarion Pager** und schließe die Einrichtung ab.
-7. Öffne **Nodarion Pager** in der Seitenleiste und erstelle deine erste Regel.
+6. Suche nach **Nodarion Pager** und schließe die Einrichtung ab.
+7. Öffne **Nodarion Pager** über die Seitenleiste.
 
 [![HACS-Repository hinzufügen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=engelsofta&repository=nodarion-alert-manager&category=integration)
 
 ### Manuelle Installation
 
-1. Lade [`nodarion-alert-manager.zip`](https://github.com/engelsofta/nodarion-alert-manager/releases/latest/download/nodarion-alert-manager.zip) aus dem aktuellen Release.
+1. Lade [`nodarion-alert-manager.zip`](https://github.com/engelsofta/nodarion-alert-manager/releases/latest/download/nodarion-alert-manager.zip) herunter.
 2. Entpacke den Inhalt nach `/config/custom_components/nodarion_pager/`.
-3. Starte Home Assistant neu und füge die Integration über **Geräte & Dienste** hinzu.
+3. Starte Home Assistant neu.
+4. Füge **Nodarion Pager** unter **Einstellungen → Geräte & Dienste** hinzu.
 
-Mindestens **Home Assistant 2026.1.0** wird benötigt.
+Mindestversion: **Home Assistant 2026.7.0**.
 
-### Regeltypen
+### Alarmregeln
 
 | Typ | Einsatz |
 | --- | --- |
-| **Grenzwert** | Numerische Werte mit `=`, `≠`, `>`, `<`, `≥`, `≤`, innerhalb oder außerhalb eines Bereichs |
-| **Digital / I/O** | Zustände wie `on`, `off`, `open`, `closed`, `1` oder `0` |
-| **Störung** | Zustandsregel mit sichtbarer Home-Assistant-Störungsmeldung |
-| **Heartbeat** | Alarm, wenn sich eine Entität innerhalb eines Zeitfensters nicht mehr ändert |
+| Grenzwert | Numerische Vergleiche mit `=`, `≠`, `>`, `<`, `≥`, `≤`, innerhalb und außerhalb |
+| Digital / I/O | Zustände wie `on`, `off`, `open`, `closed`, `1` oder `0` |
+| Störung | Zustandsregel plus sichtbarer persistenter Home-Assistant-Störungsmeldung |
+| Heartbeat | Alarm, wenn sich eine Entität über einen festgelegten Zeitraum nicht mehr ändert |
 
-### Beispiel
+Regeln unterstützen zusätzliche Entitätsbedingungen mit UND/ODER, Zeitpläne, verzögerte Behandlung nicht verfügbarer Entitäten, automatische oder manuelle Rücksetzung, Eskalationsstufen und ausgewählte Empfänger.
 
-Überwache `sensor.boiler_temperature` mit der Bedingung **größer als 70 für 20 Sekunden**. Kurze Messspitzen werden ignoriert; erst ein dauerhaft zu hoher Wert erzeugt einen Alarm. Mit Hysterese, Zeitplan und Eskalation lässt sich daraus eine belastbare Betriebsüberwachung bauen.
+### Aktionen
 
-### Benachrichtigungen
+| Aktion | Zweck |
+| --- | --- |
+| `nodarion_pager.acknowledge` | Aktiven Alarm quittieren und Wiederholungen stoppen |
+| `nodarion_pager.resolve` | Aktiven Alarm manuell auflösen |
+| `nodarion_pager.enable_rule` | Regel über ihre ID aktivieren |
+| `nodarion_pager.disable_rule` | Regel deaktivieren und aktive Alarme auflösen |
+| `nodarion_pager.pause_rule` | Regel für eine Anzahl Sekunden pausieren |
+| `nodarion_pager.maintenance` | Globales Wartungsfenster starten oder beenden |
 
-Nodarion erkennt moderne `notify`-Entitäten sowie vorhandene `notify.*`-Dienste. Pro Regel können Empfänger, Priorität, Wiederholung und Eskalation festgelegt werden. Entwarnungen lassen sich separat aktivieren.
+Die benötigten IDs stehen im Regelexport und in Ereignisdaten. Im Alltag ist die Bedienung über die Nodarion-Oberfläche meist bequemer.
 
-### Home-Assistant-Ereignisse
+### Ereignisse, Bedingungen und Aktualisierung
 
 | Ereignis | Bedeutung |
 | --- | --- |
-| `nodarion_pager_alert` | Eine Regel wurde ausgelöst oder wiederholt |
-| `nodarion_pager_resolved` | Ein Alarm wurde zurückgesetzt |
-| `nodarion_pager_acknowledged` | Ein Alarm wurde quittiert |
+| `nodarion_pager_alert` | Regel wurde ausgelöst oder wiederholt |
+| `nodarion_pager_resolved` | Alarm wurde aufgelöst |
+| `nodarion_pager_acknowledged` | Alarm wurde quittiert |
 
-### Datenschutz
+Diese Ereignisse können Home-Assistant-Automationen auslösen. Nodarion fügt keine eigenen Automations-Bedingungstypen hinzu; die internen Regelbedingungen werden in der Oberfläche konfiguriert.
 
-Die Regelauswertung, Historie und Konfiguration bleiben in deiner Home-Assistant-Instanz. Nodarion besitzt keine Cloud-Anbindung, kein Tracking und keine Telemetrie. Daten verlassen Home Assistant nur dann, wenn du selbst einen externen Benachrichtigungsdienst als Empfänger auswählst.
+Nodarion reagiert auf Home-Assistant-Zustandsänderungen und fragt Geräte nicht selbst zyklisch ab. Ein minütlicher Wartungslauf verarbeitet Zeitpläne, Timeouts, Wiederholungen, Eskalationen und lang laufende Live Activities. Konfiguration, Laufzustand und Historie werden lokal gespeichert.
+
+### Bekannte Einschränkungen
+
+- Live Activities benötigen einen klassischen `notify.mobile_app_*`-Dienst für den vollständigen strukturierten Payload.
+- Companion App und Betriebssystem entscheiden letztlich über Darstellung und Zustellzeitpunkt.
+- iOS kann zu häufige Updates drosseln und begrenzt die Lebensdauer; Nodarion drosselt und frischt lange laufende Activities regelmäßig auf.
+- Nodarion überwacht vorhandene Home-Assistant-Entitäten und kommuniziert nicht direkt mit Haushaltsgeräten.
+
+### Fehlerbehebung
+
+- Starte Home Assistant nach einem Update neu und leere bei Darstellungsproblemen den Browser-Cache.
+- Prüfe, ob ausgewählte Entitäten und Benachrichtigungsdienste noch vorhanden sind.
+- Prüfe für Live Activities Companion-App-Berechtigungen, Erreichbarkeit und Home Assistant ab Version 2026.7.0.
+- Fehlende Verweise erscheinen unter **Einstellungen → System → Reparaturen**.
+- Diagnosen entfernen sensible Werte automatisch.
+
+### Deinstallation
+
+1. Lösche **Nodarion Pager** unter **Einstellungen → Geräte & Dienste**.
+2. Entferne `custom_components/nodarion_pager/` oder deinstalliere die Integration über HACS.
+3. Starte Home Assistant neu.
+
+Beende aktive Live Activities vor der Deinstallation, damit ihr abschließender Löschbefehl noch zugestellt werden kann.
+
+### Datenschutz und Sicherheit
+
+Regelauswertung, Konfiguration und Historie bleiben in Home Assistant. Nodarion besitzt keine externe API, Cloud-Anmeldung, Analysefunktionen oder Telemetrie. Daten verlassen Home Assistant nur über ausdrücklich ausgewählte Benachrichtigungsziele. Diagnosen entfernen Entitäts-IDs, Namen, Werte, Kommentare und Benutzer-IDs. Sicherheitsprobleme bitte privat über das [Security-Advisory-Formular](https://github.com/engelsofta/nodarion-alert-manager/security/advisories/new) melden.
 
 ---
+
+## Official Home Assistant integration readiness
+
+This repository follows the custom integration structure and provides a UI config flow, translations, actions, diagnostics, Repairs, automated validation, installation instructions and removal instructions. A contribution to Home Assistant Core remains a separate process: core code lives under `homeassistant/components`, omits the custom `version` and `issue_tracker` manifest fields, requires tests inside the Core repository and documentation in the Home Assistant documentation repository, and may require the custom panel to be reviewed separately by the frontend project. See [OFFICIAL_INTEGRATION.md](OFFICIAL_INTEGRATION.md) for the readiness checklist and remaining work.
 
 ## Support and development
 
@@ -181,7 +308,7 @@ Die Regelauswertung, Historie und Konfiguration bleiben in deiner Home-Assistant
 - [Security policy](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)
 
-This is a custom integration and is not affiliated with or endorsed by the Home Assistant project.
+Nodarion Pager is currently a custom integration and is not affiliated with or endorsed by the Home Assistant project.
 
 ## License
 

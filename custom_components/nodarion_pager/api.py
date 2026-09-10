@@ -61,6 +61,14 @@ class PagerView(HomeAssistantView):
                 await manager.async_update_settings(data.get("settings") or {})
             elif action == "test_notification":
                 await manager.async_test_notification_target(str(data["target_id"]))
+            elif action == "save_live_activity":
+                await manager.async_save_live_activity(data.get("live_activity") or {})
+            elif action == "delete_live_activity":
+                await manager.async_delete_live_activity(str(data["activity_id"]))
+            elif action == "toggle_live_activity":
+                await manager.async_toggle_live_activity(str(data["activity_id"]), bool(data["enabled"]))
+            elif action == "test_live_activity":
+                await manager.async_test_live_activity(str(data["activity_id"]))
             elif action == "comment":
                 user = request.get("hass_user")
                 await manager.async_comment(str(data["alert_id"]), str(data.get("comment", "")), getattr(user, "id", None))

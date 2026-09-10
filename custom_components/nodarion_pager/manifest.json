@@ -1,6 +1,6 @@
 {
   "domain": "nodarion_pager",
-  "name": "Engelsoft Nodarion Pager",
+  "name": "Nodarion Pager",
   "codeowners": ["@engelsofta"],
   "config_flow": true,
   "dependencies": ["frontend", "http"],
@@ -10,5 +10,5 @@
   "issue_tracker": "https://github.com/engelsofta/nodarion-alert-manager/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.8.0"
+  "version": "1.0.0"
 }

@@ -1,4 +1,4 @@
-"""Engelsoft Nodarion Pager integration."""
+"""Nodarion Pager integration."""
 
 from __future__ import annotations
 
@@ -15,30 +15,51 @@ from .manager import PagerManager
 from .websocket import websocket_subscribe
 
 
+async def async_setup(hass: HomeAssistant, _config: dict) -> bool:
+    """Register integration actions independently from a config entry."""
+    data = hass.data.setdefault(DOMAIN, {})
+    if data.get("services_registered"):
+        return True
+
+    async def handle_service(call) -> None:
+        manager: PagerManager | None = hass.data.get(DOMAIN, {}).get("manager")
+        if manager is None:
+            return
+        if call.service == "acknowledge":
+            await manager.async_acknowledge(str(call.data["alert_id"]))
+        elif call.service == "resolve":
+            await manager.async_resolve(str(call.data["alert_id"]))
+        elif call.service == "enable_rule":
+            await manager.async_toggle_rule(str(call.data["rule_id"]), True)
+        elif call.service == "disable_rule":
+            await manager.async_toggle_rule(str(call.data["rule_id"]), False)
+        elif call.service == "pause_rule":
+            await manager.async_pause_rule(
+                str(call.data["rule_id"]), float(call.data.get("seconds", 0))
+            )
+        elif call.service == "maintenance":
+            await manager.async_set_maintenance(float(call.data.get("seconds", 0)))
+
+    for service in (
+        "acknowledge",
+        "resolve",
+        "enable_rule",
+        "disable_rule",
+        "pause_rule",
+        "maintenance",
+    ):
+        hass.services.async_register(DOMAIN, service, handle_service)
+    data["services_registered"] = True
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Pager and its admin panel."""
     data = hass.data.setdefault(DOMAIN, {})
     manager = PagerManager(hass)
     await manager.async_start()
+    entry.runtime_data = manager
     data["manager"] = manager
-    if not data.get("services_registered"):
-        async def handle_service(call) -> None:
-            current: PagerManager = hass.data[DOMAIN]["manager"]
-            if call.service == "acknowledge":
-                await current.async_acknowledge(str(call.data["alert_id"]))
-            elif call.service == "resolve":
-                await current.async_resolve(str(call.data["alert_id"]))
-            elif call.service == "enable_rule":
-                await current.async_toggle_rule(str(call.data["rule_id"]), True)
-            elif call.service == "disable_rule":
-                await current.async_toggle_rule(str(call.data["rule_id"]), False)
-            elif call.service == "pause_rule":
-                await current.async_pause_rule(str(call.data["rule_id"]), float(call.data.get("seconds", 0)))
-            elif call.service == "maintenance":
-                await current.async_set_maintenance(float(call.data.get("seconds", 0)))
-        for service in ("acknowledge", "resolve", "enable_rule", "disable_rule", "pause_rule", "maintenance"):
-            hass.services.async_register(DOMAIN, service, handle_service)
-        data["services_registered"] = True
     if not data.get("api_registered"):
         hass.http.register_view(PagerView)
         websocket_api.async_register_command(hass, websocket_subscribe)
@@ -50,12 +71,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload Pager."""
     data = hass.data.get(DOMAIN, {})
-    if manager := data.pop("manager", None):
+    manager: PagerManager | None = entry.runtime_data
+    if manager:
         await manager.async_stop()
+    if data.get("manager") is manager:
+        data.pop("manager", None)
     frontend.async_remove_panel(hass, PANEL_URL)
-    if data.pop("services_registered", False):
-        for service in ("acknowledge", "resolve", "enable_rule", "disable_rule", "pause_rule", "maintenance"):
-            hass.services.async_remove(DOMAIN, service)
     hass.data.pop(f"{DOMAIN}_panel", None)
     return True
 

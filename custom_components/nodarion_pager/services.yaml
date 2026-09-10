@@ -1,43 +1,74 @@
 acknowledge:
+  name: Acknowledge alert
+  description: Mark an active Pager alert as acknowledged and stop its repeats.
   fields:
     alert_id:
+      name: Alert ID
+      description: ID of the active alert to acknowledge.
       required: true
       selector:
         text:
+
 resolve:
+  name: Resolve alert
+  description: Resolve an active Pager alert manually.
   fields:
     alert_id:
+      name: Alert ID
+      description: ID of the active alert to resolve.
       required: true
       selector:
         text:
+
 enable_rule:
+  name: Enable rule
+  description: Enable a Pager monitoring rule.
   fields:
     rule_id:
+      name: Rule ID
+      description: ID of the rule to enable.
       required: true
       selector:
         text:
+
 disable_rule:
+  name: Disable rule
+  description: Disable a Pager rule and resolve its active alerts.
   fields:
     rule_id:
+      name: Rule ID
+      description: ID of the rule to disable.
       required: true
       selector:
         text:
+
 pause_rule:
+  name: Pause rule
+  description: Temporarily pause a Pager monitoring rule.
   fields:
     rule_id:
+      name: Rule ID
+      description: ID of the rule to pause.
       required: true
       selector:
         text:
     seconds:
+      name: Duration
+      description: Number of seconds to pause the rule. Use zero to remove the pause.
       default: 1800
       selector:
         number:
           min: 0
           max: 604800
           unit_of_measurement: s
+
 maintenance:
+  name: Set maintenance window
+  description: Pause scheduled Pager evaluations globally for a period.
   fields:
     seconds:
+      name: Duration
+      description: Number of seconds for the maintenance window. Use zero to end it.
       default: 3600
       selector:
         number:

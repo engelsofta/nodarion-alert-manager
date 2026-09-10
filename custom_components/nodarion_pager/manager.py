@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from datetime import datetime, timedelta
 from typing import Any
 from uuid import uuid4
@@ -31,7 +32,7 @@ from .const import (
     STORAGE_VERSION,
     VERSION,
 )
-from .models import Rule, matches, matches_condition
+from .models import LiveActivity, Rule, matches, matches_condition
 
 _LOGGER = logging.getLogger(__name__)
 UNAVAILABLE = {"unknown", "unavailable"}
@@ -44,15 +45,18 @@ class PagerManager:
         self.hass = hass
         self.store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self.rules: dict[str, Rule] = {}
+        self.live_activities: dict[str, LiveActivity] = {}
         self.alerts: dict[str, dict[str, Any]] = {}
         self.history: list[dict[str, Any]] = []
         self.runtime: dict[str, dict[str, Any]] = {}
+        self.activity_runtime: dict[str, dict[str, Any]] = {}
         self.settings = dict(DEFAULT_SETTINGS)
         self._timers: dict[str, Any] = {}
         self._unsub = None
         self._save_task: asyncio.Task | None = None
         self._save_dirty = False
         self._rule_locks: dict[str, asyncio.Lock] = {}
+        self._activity_locks: dict[str, asyncio.Lock] = {}
         self.last_notification_errors: dict[str, str] = {}
         self._startup_ready = False
         self._startup_cancel = None
@@ -68,9 +72,16 @@ class PagerManager:
                 self.rules[rule.id] = rule
             except (TypeError, ValueError):
                 _LOGGER.warning("Ignoring invalid Pager rule")
+        for raw in saved.get("live_activities", []):
+            try:
+                activity = LiveActivity.from_dict(raw)
+                self.live_activities[activity.id] = activity
+            except (TypeError, ValueError):
+                _LOGGER.warning("Ignoring invalid Pager live activity")
         self.alerts = {item["id"]: item for item in saved.get("alerts", []) if item.get("id")}
         self.history = list(saved.get("history", []))
         self.runtime = dict(saved.get("runtime", {}))
+        self.activity_runtime = dict(saved.get("activity_runtime", {}))
         self._schedule_unsub = async_track_time_interval(self.hass, self._schedule_tick, timedelta(minutes=1))
         self._resubscribe()
         if self.hass.is_running:
@@ -115,6 +126,9 @@ class PagerManager:
                     self.hass.async_create_task(self._async_heartbeat_pulse(rule, state))
                 else:
                     self.hass.async_create_task(self.async_evaluate(rule, primary_state))
+        for activity in self.live_activities.values():
+            if activity.enabled and entity_id in activity.watched_entities():
+                self.hass.async_create_task(self.async_evaluate_live_activity(activity))
 
     @callback
     def _home_assistant_started(self, _event: Event) -> None:
@@ -129,6 +143,9 @@ class PagerManager:
         for rule in self.rules.values():
             if rule.enabled:
                 self.hass.async_create_task(self.async_evaluate(rule, self.hass.states.get(rule.entity_id)))
+        for activity in self.live_activities.values():
+            if activity.enabled:
+                self.hass.async_create_task(self.async_evaluate_live_activity(activity))
         self._refresh_repairs()
 
     @callback
@@ -144,6 +161,9 @@ class PagerManager:
                     self.hass.async_create_task(
                         self.async_evaluate(rule, self.hass.states.get(rule.entity_id))
                     )
+            for activity in self.live_activities.values():
+                if activity.enabled:
+                    self.hass.async_create_task(self.async_evaluate_live_activity(activity, force=True))
             self._refresh_repairs()
 
         self._startup_cancel = async_call_later(self.hass, delay, ready)
@@ -166,6 +186,10 @@ class PagerManager:
                 raw.setdefault("escalation", [])
                 raw.setdefault("paused_until", None)
             saved["schema_version"] = 2
+        if version < 3:
+            saved.setdefault("live_activities", [])
+            saved.setdefault("activity_runtime", {})
+            saved["schema_version"] = 3
         return saved
 
     def _temporarily_paused(self, rule: Rule) -> bool:
@@ -523,10 +547,188 @@ class PagerManager:
         self._record("commented", {**alert, **item})
         await self._async_save()
 
+    def _activity_conditions_match(self, conditions: list[dict[str, Any]], mode: str) -> bool:
+        results = []
+        for condition in conditions:
+            state = self.hass.states.get(str(condition.get("entity_id", "")))
+            value = (
+                state.attributes.get(condition.get("attribute"))
+                if state and condition.get("attribute")
+                else (state.state if state else None)
+            )
+            results.append(matches_condition(condition, value))
+        return (all(results) if mode == "and" else any(results)) if results else False
+
+    @staticmethod
+    def _activity_tag(activity_id: str) -> str:
+        safe = re.sub(r"[^A-Za-z0-9_-]", "_", activity_id)
+        return f"nodarion_activity_{safe}"[:64]
+
+    def _template_activity_text(self, template: str | None, activity: LiveActivity) -> str | None:
+        if not template:
+            return None
+        values = {"name": activity.name}
+        for entity_id in activity.watched_entities():
+            state = self.hass.states.get(entity_id)
+            values[entity_id] = state.state if state else "unavailable"
+        return re.sub(r"\{([^{}]+)\}", lambda match: str(values.get(match.group(1), match.group(0))), template)
+
+    def _activity_value(self, entity_id: str | None, attribute: str | None) -> Any:
+        state = self.hass.states.get(entity_id) if entity_id else None
+        return state.attributes.get(attribute) if state and attribute else (state.state if state else None)
+
+    def _activity_payload(self, activity: LiveActivity) -> dict[str, Any]:
+        nested: dict[str, Any] = {
+            "tag": self._activity_tag(activity.id),
+            "live_update": True,
+            "notification_icon": activity.icon,
+            "notification_icon_color": activity.color,
+            "progress_bar_color": activity.color,
+            "progress_bar_direction": activity.progress_bar_direction,
+        }
+        critical = self._template_activity_text(activity.critical_text_template, activity)
+        if critical:
+            nested["critical_text"] = critical
+        if activity.url:
+            nested["url"] = activity.url
+        progress = self._activity_value(activity.progress_entity, activity.progress_attribute)
+        try:
+            if progress not in (None, "", "unknown", "unavailable"):
+                nested["progress"] = max(0, min(float(progress), activity.progress_max))
+                nested["progress_max"] = activity.progress_max
+        except (TypeError, ValueError):
+            pass
+        remaining = self._activity_value(activity.remaining_time_entity, activity.remaining_time_attribute)
+        try:
+            if activity.remaining_time_unit == "timestamp":
+                try:
+                    when = float(remaining)
+                except (TypeError, ValueError):
+                    when = datetime.fromisoformat(str(remaining)).timestamp()
+                nested.update({"chronometer": True, "when": when})
+            elif remaining not in (None, "", "unknown", "unavailable"):
+                seconds = float(remaining) * (60 if activity.remaining_time_unit == "minutes" else 1)
+                nested.update({"chronometer": True, "when": max(0, seconds), "when_relative": True})
+        except (TypeError, ValueError):
+            pass
+        return {
+            "title": self._template_activity_text(activity.title, activity),
+            "message": self._template_activity_text(activity.message_template, activity),
+            "data": nested,
+        }
+
+    def _activity_targets(self, activity: LiveActivity) -> list[str]:
+        available = {item["id"] for item in self._notification_targets()}
+        return [
+            target for target in activity.notification_targets
+            if target in available and target.startswith("service:notify.mobile_app_")
+        ]
+
+    async def _send_activity(self, activity: LiveActivity, payload: dict[str, Any], targets: list[str]) -> list[str]:
+        delivered = []
+        for target in targets:
+            try:
+                domain, service = target.removeprefix("service:").split(".", 1)
+                await self.hass.services.async_call(domain, service, payload, blocking=True)
+                delivered.append(target)
+            except Exception:
+                self.last_notification_errors[target] = dt_util.now().isoformat()
+                _LOGGER.exception("Could not send live activity %s to %s", activity.name, target)
+        return delivered
+
+    async def async_evaluate_live_activity(self, activity: LiveActivity, force: bool = False) -> None:
+        lock = self._activity_locks.setdefault(activity.id, asyncio.Lock())
+        async with lock:
+            runtime = self.activity_runtime.setdefault(activity.id, {})
+            active = bool(runtime.get("active"))
+            if active and self._activity_conditions_match(activity.end_conditions, activity.end_condition_mode):
+                await self._async_end_live_activity(activity)
+                return
+            if active and activity.maximum_runtime:
+                started = datetime.fromisoformat(runtime["started_at"])
+                if (dt_util.now() - started).total_seconds() >= activity.maximum_runtime:
+                    await self._async_end_live_activity(activity)
+                    return
+            if not active:
+                if not self._activity_conditions_match(activity.start_conditions, activity.condition_mode):
+                    return
+                runtime.update({"active": True, "started_at": dt_util.now().isoformat(), "notified_targets": []})
+                force = True
+            last = runtime.get("last_update")
+            if last and (dt_util.now() - datetime.fromisoformat(last)).total_seconds() >= 21600:
+                force = True
+            if not force and last and (dt_util.now() - datetime.fromisoformat(last)).total_seconds() < activity.minimum_update_interval:
+                return
+            payload = self._activity_payload(activity)
+            targets = self._activity_targets(activity)
+            already_notified = set(runtime.get("notified_targets", []))
+            if not force and payload == runtime.get("last_payload") and set(targets).issubset(already_notified):
+                return
+            delivered = await self._send_activity(activity, payload, targets)
+            runtime["notified_targets"] = sorted(set(runtime.get("notified_targets", [])) | set(delivered))
+            runtime["last_payload"] = payload
+            runtime["last_update"] = dt_util.now().isoformat()
+            self._schedule_save()
+
+    async def _async_end_live_activity(self, activity: LiveActivity) -> None:
+        runtime = self.activity_runtime.setdefault(activity.id, {})
+        targets = list(runtime.get("notified_targets", []))
+        payload = {"message": "clear_notification", "data": {"tag": self._activity_tag(activity.id)}}
+        await self._send_activity(activity, payload, targets)
+        runtime.clear()
+        self._schedule_save()
+
+    async def async_save_live_activity(self, raw: dict[str, Any]) -> LiveActivity:
+        activity = LiveActivity.from_dict(raw)
+        previous = self.live_activities.get(activity.id)
+        if previous and self.activity_runtime.get(activity.id, {}).get("active"):
+            await self._async_end_live_activity(previous)
+        self.live_activities[activity.id] = activity
+        self._resubscribe()
+        if self._startup_ready and activity.enabled:
+            await self.async_evaluate_live_activity(activity, force=True)
+        await self._async_save()
+        return activity
+
+    async def async_toggle_live_activity(self, activity_id: str, enabled: bool) -> None:
+        activity = self.live_activities[activity_id]
+        activity.enabled = enabled
+        if not enabled and self.activity_runtime.get(activity_id, {}).get("active"):
+            await self._async_end_live_activity(activity)
+        elif enabled and self._startup_ready:
+            await self.async_evaluate_live_activity(activity, force=True)
+        self._resubscribe()
+        await self._async_save()
+
+    async def async_delete_live_activity(self, activity_id: str) -> None:
+        activity = self.live_activities.get(activity_id)
+        if activity and self.activity_runtime.get(activity_id, {}).get("active"):
+            await self._async_end_live_activity(activity)
+        self.live_activities.pop(activity_id, None)
+        self.activity_runtime.pop(activity_id, None)
+        self._resubscribe()
+        await self._async_save()
+
+    async def async_test_live_activity(self, activity_id: str) -> None:
+        activity = self.live_activities[activity_id]
+        payload = self._activity_payload(activity)
+        test_tag = f"{self._activity_tag(activity.id)[:59]}_test"
+        payload["data"]["tag"] = test_tag
+        targets = await self._send_activity(activity, payload, self._activity_targets(activity))
+
+        @callback
+        def clear_test(_now) -> None:
+            clear_payload = {"message": "clear_notification", "data": {"tag": test_tag}}
+            self.hass.async_create_task(self._send_activity(activity, clear_payload, targets))
+
+        async_call_later(self.hass, 10, clear_test)
+
     def _resubscribe(self) -> None:
         if self._unsub:
             self._unsub()
-        ids = sorted({entity_id for rule in self.rules.values() if rule.enabled for entity_id in [rule.entity_id, *(str(item.get("entity_id")) for item in rule.conditions if item.get("entity_id"))]})
+        ids = {entity_id for rule in self.rules.values() if rule.enabled for entity_id in [rule.entity_id, *(str(item.get("entity_id")) for item in rule.conditions if item.get("entity_id"))]}
+        ids.update(entity_id for activity in self.live_activities.values() if activity.enabled for entity_id in activity.watched_entities())
+        ids = sorted(ids)
         self._unsub = async_track_state_change_event(self.hass, ids, self._state_changed) if ids else None
 
     def _active_for_rule(self, rule_id: str) -> dict[str, Any] | None:
@@ -665,6 +867,8 @@ class PagerManager:
             "version": VERSION, "rules": [r.as_dict() for r in self.rules.values()],
             "alerts": sorted(self.alerts.values(), key=lambda a: a["started_at"], reverse=True),
             "runtime": self.runtime, "settings": self.settings,
+            "live_activities": [item.as_dict() for item in self.live_activities.values()],
+            "activity_runtime": self.activity_runtime,
         }
         if scope == "runtime":
             return base
@@ -709,12 +913,19 @@ class PagerManager:
 
     def diagnostics(self) -> dict[str, Any]:
         missing_entities = sorted(rule.entity_id for rule in self.rules.values() if self.hass.states.get(rule.entity_id) is None)
+        missing_activity_entities = sorted({
+            entity_id for activity in self.live_activities.values()
+            for entity_id in activity.watched_entities() if self.hass.states.get(entity_id) is None
+        })
         available_targets = {item["id"] for item in self._notification_targets()}
         missing_targets = sorted({target for rule in self.rules.values() for target in (rule.notification_targets or []) if target not in available_targets})
         return {
             "version": VERSION, "rules": len(self.rules), "active_alerts": len(self.alerts),
+            "live_activities": len(self.live_activities),
+            "active_live_activities": sum(bool(item.get("active")) for item in self.activity_runtime.values()),
             "pending": sum(bool(item.get("pending_since")) for item in self.runtime.values()),
             "timers": len(self._timers), "missing_entities": missing_entities,
+            "missing_live_activity_entities": missing_activity_entities,
             "missing_notification_targets": missing_targets,
             "last_notification_errors": self.last_notification_errors,
         }
@@ -757,8 +968,10 @@ class PagerManager:
 
     async def _async_save(self) -> None:
         await self.store.async_save({
-            "schema_version": 2,
+            "schema_version": 3,
             "rules": [r.as_dict() for r in self.rules.values()], "alerts": list(self.alerts.values()),
             "history": self.history, "runtime": self.runtime, "settings": self.settings,
+            "live_activities": [item.as_dict() for item in self.live_activities.values()],
+            "activity_runtime": self.activity_runtime,
         })
         async_dispatcher_send(self.hass, SIGNAL_UPDATE, self.frontend_state(scope="runtime"))
