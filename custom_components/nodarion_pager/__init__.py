@@ -8,11 +8,14 @@ from homeassistant.components import frontend, websocket_api
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 
 from .api import PagerView
 from .const import DOMAIN, PANEL_TITLE, PANEL_URL, STATIC_URL, VERSION
 from .manager import PagerManager
 from .websocket import websocket_subscribe
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, _config: dict) -> bool:
