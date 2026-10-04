@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 — 2026-10-04
+
+### Your home's drama. Now with better lighting.
+
+- Refreshed the panel, dialogs, settings and Live Activity wizard with a warm interior background and restrained glass styling.
+- Improved the rule list and dialogs on smaller screens.
+- Preserved focus, scroll positions and unsaved settings during background updates.
+- Simplified notifications to the entity display name and a concise Alarm or OK status.
+- Clear resolved non-critical phone and persistent notifications, including recipients reached through escalation; critical notifications remain visible.
+- Added regression coverage for notification cleanup and frontend refresh behavior.
+- Updated the README with anonymized demo screenshots of the new design.
+
 ## 1.0.0 — 2026-09-10
 
 ### Headline feature: Live Activities

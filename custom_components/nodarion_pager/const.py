@@ -2,7 +2,7 @@
 
 DOMAIN = "nodarion_pager"
 NAME = "Nodarion Pager"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}.state"
 PANEL_URL = "nodarion-pager"

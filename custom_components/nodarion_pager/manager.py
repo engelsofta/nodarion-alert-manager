@@ -371,7 +371,8 @@ class PagerManager:
             "id": str(uuid4()), "rule_id": rule.id, "rule_name": rule.name,
             "entity_id": rule.entity_id, "severity": rule.severity, "value": actual,
             "kind": rule.kind, "reason": reason, "started_at": now.isoformat(), "acknowledged_at": None,
-            "last_repeated_at": None,
+            "last_repeated_at": None, "mobile_notification_targets": [],
+            "persistent_notification_sent": False,
         }
         self.alerts[alert["id"]] = alert
         rt["latched"] = True
@@ -382,13 +383,14 @@ class PagerManager:
         self._record("alert", alert)
         self.hass.bus.async_fire(EVENT_ALERT, dict(alert))
         if rule.kind == "fault":
+            entity_name = self._entity_name(rule.entity_id)
             await self.hass.services.async_call(
                 "persistent_notification",
                 "create",
                 {
                     "notification_id": f"{DOMAIN}_fault_{rule.id}",
-                    "title": f"Nodarion Pager: {rule.name}",
-                    "message": f"{rule.entity_id}: {actual}",
+                    "title": entity_name,
+                    "message": "Alarm",
                 },
                 blocking=False,
             )
@@ -448,7 +450,9 @@ class PagerManager:
         }
         self._record("resolved", alert)
         self.hass.bus.async_fire(EVENT_RESOLVED, dict(alert))
-        if alert.get("kind") == "fault" or (rule and rule.kind == "fault"):
+        if alert.get("severity") != "critical" and (
+            alert.get("kind") == "fault" or (rule and rule.kind == "fault")
+        ):
             await self.hass.services.async_call(
                 "persistent_notification",
                 "dismiss",
@@ -801,7 +805,7 @@ class PagerManager:
         available = {item["id"] for item in self._notification_targets()}
         if target not in available:
             raise ValueError("Benachrichtigungsziel ist nicht mehr verfügbar")
-        title = "Nodarion Pager · Test"
+        title = "Testbenachrichtigung"
         message = "Testbenachrichtigung erfolgreich empfangen."
         try:
             if target.startswith("entity:"):
@@ -821,19 +825,39 @@ class PagerManager:
 
     async def _async_forward_notification(self, alert: dict[str, Any], event: str) -> None:
         """Forward without ever interrupting monitoring when one target fails."""
+        tag = f"nodarion_pager_{alert['id']}"
+        if event == "resolved" and alert.get("severity") != "critical":
+            # Clear every phone that received this alert, including escalation targets.
+            for target in alert.get("mobile_notification_targets", []):
+                try:
+                    domain, service = target.removeprefix("service:").split(".", 1)
+                    await self.hass.services.async_call(
+                        domain, service,
+                        {"message": "clear_notification", "data": {"tag": tag}},
+                        blocking=False,
+                    )
+                except Exception:
+                    self.last_notification_errors[target] = dt_util.now().isoformat()
+                    _LOGGER.exception("Could not clear Pager notification on %s", target)
+            if alert.get("persistent_notification_sent"):
+                try:
+                    await self.hass.services.async_call(
+                        "persistent_notification", "dismiss",
+                        {"notification_id": tag}, blocking=False,
+                    )
+                except Exception:
+                    _LOGGER.exception("Could not clear Pager persistent notification")
         if not self.settings.get("notifications_enabled"):
             return
+        title = self._entity_name(str(alert.get("entity_id", "")))
         if event == "resolved":
             if not self.settings.get("notify_resolved"):
                 return
-            title = f"Nodarion Pager · OK · {alert['rule_name']}"
-            message = f"Entwarnung: {alert['entity_id']} ist wieder im Normalzustand."
+            message = "OK"
         else:
             if not self.settings.get(f"notify_{alert.get('severity', 'warning')}", False):
                 return
-            repeated = " · Wiederholung" if event == "repeat" else ""
-            title = f"Nodarion Pager · {str(alert.get('severity', 'warning')).upper()}{repeated}"
-            message = f"{alert['rule_name']}\n{alert['entity_id']}: {alert.get('value', '–')}"
+            message = "Alarm · Wiederholung" if event == "repeat" else "Alarm"
         available = {item["id"] for item in self._notification_targets()}
         global_targets = self.settings.get("notification_targets", [])
         rule = self.rules.get(str(alert.get("rule_id", "")))
@@ -855,12 +879,36 @@ class PagerManager:
                 else:
                     domain_service = target.removeprefix("service:")
                     domain, service = domain_service.split(".", 1)
+                    if service == "persistent_notification" and event == "resolved":
+                        continue
+                    payload = {"title": title, "message": message}
+                    if service.startswith("mobile_app_") and event != "resolved":
+                        payload["data"] = {"tag": tag}
+                    elif service == "persistent_notification":
+                        payload["data"] = {"notification_id": tag}
                     await self.hass.services.async_call(
-                        domain, service, {"title": title, "message": message}, blocking=False,
+                        domain, service, payload, blocking=False,
                     )
+                    if service.startswith("mobile_app_") and event != "resolved":
+                        targets = alert.setdefault("mobile_notification_targets", [])
+                        if target not in targets:
+                            targets.append(target)
+                    elif service == "persistent_notification":
+                        alert["persistent_notification_sent"] = True
             except Exception:  # A notifier must never stop the rule engine.
                 self.last_notification_errors[target] = dt_util.now().isoformat()
                 _LOGGER.exception("Could not forward Pager notification to %s", target)
+
+    def _entity_name(self, entity_id: str) -> str:
+        """Return Home Assistant's display name, with safe legacy fallbacks."""
+        state = self.hass.states.get(entity_id)
+        if state:
+            friendly_name = state.attributes.get("friendly_name")
+            if friendly_name:
+                return str(friendly_name)
+            if state.name:
+                return str(state.name)
+        return entity_id or "Alarm"
 
     def frontend_state(self, scope: str = "full", offset: int = 0, limit: int = 100) -> dict[str, Any]:
         base = {

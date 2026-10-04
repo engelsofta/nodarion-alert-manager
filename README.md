@@ -3,8 +3,8 @@
 <div align="center">
   <img src="custom_components/nodarion_pager/brand/logo.svg" alt="Nodarion Pager" width="420">
 
-  ### Your home has a lot to say. Nodarion knows when it should beep.
-  ### Dein Zuhause hat viel zu sagen. Nodarion weiß, wann es piepen muss.
+  ### Your home's drama. Now with better lighting.
+  ### Das Drama deines Zuhauses. Jetzt mit besserer Beleuchtung.
 
   A local alert center **and** Live Activity engine for Home Assistant.
 
@@ -73,13 +73,9 @@ Live Activities appear on the iOS Lock Screen and Dynamic Island. Android Live U
 
 ![Nodarion overview with anonymized demo data](docs/images/nodarion-overview.png)
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nodarion-rules-dark-anonymized.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/images/nodarion-rules-light-anonymized.png">
-  <img alt="Nodarion rule list with anonymized demo data" src="docs/images/nodarion-rules-light-anonymized.png">
-</picture>
+![Nodarion rules with anonymized demo data](docs/images/nodarion-rules.png)
 
-*The rule center automatically shown in GitHub's matching light or dark theme. All entities and recipients are fictional demo data.*
+*Screenshots show fictional demo entities, recipients, readings and history.*
 
 ### Install with HACS
 
@@ -214,13 +210,9 @@ Unter iOS erscheinen Live Activities auf Sperrbildschirm und Dynamic Island. And
 
 ![Nodarion Übersicht mit anonymisierten Demo-Daten](docs/images/nodarion-overview.png)
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nodarion-rules-dark-anonymized.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/images/nodarion-rules-light-anonymized.png">
-  <img alt="Nodarion Regelliste mit anonymisierten Demo-Daten" src="docs/images/nodarion-rules-light-anonymized.png">
-</picture>
+![Nodarion rules with anonymized demo data](docs/images/nodarion-rules.png)
 
-*Die Regelzentrale erscheint passend zum GitHub-Theme in Hell oder Dunkel. Sämtliche Entitäten und Empfänger sind frei erfundene Demo-Daten.*
+*Die Screenshots zeigen erfundene Demo-Entitäten, Empfänger, Messwerte und Historie.*
 
 ### Installation über HACS
 

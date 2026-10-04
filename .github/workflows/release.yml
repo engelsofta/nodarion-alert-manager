@@ -50,7 +50,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: nodarion-alert-manager.zip
-          name: Nodarion Pager ${{ github.ref_name }} — Your home has a lot to say
+          name: Nodarion Pager ${{ github.ref_name }} — Your home's drama. Now with better lighting.
           body_path: RELEASE_NOTES.md
           generate_release_notes: false
           fail_on_unmatched_files: true

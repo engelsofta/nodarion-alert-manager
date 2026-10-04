@@ -102,9 +102,9 @@ class NodarionPagerPanel extends HTMLElement {
     this._hass = value;
     this.toggleAttribute("data-light", value?.themes?.darkMode === false);
     if (!this._loaded) { this._loaded = true; this.load(); }
-    else if (this._data && !this._editing && !this._editingActivity && !this._chartRule && this._view !== "settings") {
+    else if (this.canRefreshView()) {
       clearTimeout(this._renderTimer);
-      this._renderTimer = setTimeout(() => { if (!this.filterFocused()) this.render(); }, 200);
+      this._renderTimer = setTimeout(() => { if (this.canRefreshView()) this.render(); }, 200);
     }
   }
   set panel(value) { this._panel = value; }
@@ -118,8 +118,8 @@ class NodarionPagerPanel extends HTMLElement {
 
   connectedCallback() {
     this._refreshTimer = setInterval(async () => {
-      if (!this._hass || !this._data || this._editing || this._editingActivity || this._chartRule || this._view === "settings" || this.filterFocused()) return;
-      try { const fresh = await this._hass.callApi("GET", `${API}?scope=runtime`); if (this.filterFocused()) return; this._data = {...this._data,...fresh}; this._lastUpdated = new Date(); this.render(); } catch (_err) { /* retry later */ }
+      if (!this._hass || !this.canRefreshView()) return;
+      try { const fresh = await this._hass.callApi("GET", `${API}?scope=runtime`); this._data = {...this._data,...fresh}; this._lastUpdated = new Date(); if (this.canRefreshView()) this.render(); } catch (_err) { /* retry later */ }
     }, 30000);
   }
 
@@ -132,6 +132,12 @@ class NodarionPagerPanel extends HTMLElement {
 
   filterFocused() {
     return Boolean(this.shadowRoot?.activeElement?.closest?.('.filterbar'));
+  }
+
+  canRefreshView() {
+    // Runtime updates must not replace the settings form or interrupt a dialog.
+    return Boolean(this._data && this._view !== "settings" && !this._editing &&
+      !this._editingActivity && !this._chartRule && !this._confirm && !this.filterFocused());
   }
 
   get lang() {
@@ -158,7 +164,7 @@ class NodarionPagerPanel extends HTMLElement {
 
   async load() {
     this.renderLoading();
-    try { this._data = await this._hass.callApi("GET", API); this._lastUpdated = new Date();this.render();if(this._hass.connection&&!this._unsubscribePush){this._unsubscribePush=await this._hass.connection.subscribeMessage(fresh=>{this._data={...this._data,...fresh};this._lastUpdated=new Date();if(!this._editing&&!this._editingActivity&&!this._chartRule&&!this.filterFocused())this.render();},{type:'nodarion_pager/subscribe'});} }
+    try { this._data = await this._hass.callApi("GET", API); this._lastUpdated = new Date();this.render();if(this._hass.connection&&!this._unsubscribePush){this._unsubscribePush=await this._hass.connection.subscribeMessage(fresh=>{this._data={...this._data,...fresh};this._lastUpdated=new Date();if(this.canRefreshView())this.render();},{type:'nodarion_pager/subscribe'});} }
     catch (err) { this.renderError(err); }
   }
 
@@ -321,7 +327,7 @@ const events=[...new Set(this._data.history.map(h=>h.event).filter(Boolean))];
     const s=this._data.settings;
     const targets=this._data.notification_targets||[];
     const selected=new Set(s.notification_targets||[]);
-    const targetHtml=targets.length?targets.map(target=>`<div class="notify-target configurable-target"><input type="checkbox" data-notify-target value="${esc(target.id)}" ${selected.has(target.id)?'checked':''}><span class="target-identity"><b><i class="recipient-dot" style="--recipient-color:${esc(target.color)}"></i>${esc(target.original_name||target.name)}</b><small>${esc(target.detail)}</small></span><label class="target-name">${this.t('recipientName')}<input data-target-name="${esc(target.id)}" maxlength="80" value="${esc(target.name)}" placeholder="${esc(target.original_name||target.name)}"></label><label class="target-color" title="${this.t('recipientColor')}"><input data-target-color="${esc(target.id)}" type="color" value="${esc(target.color||'#d7ad52')}"></label><em>${target.type==='entity'?'Entity':'Service'}</em><button type="button" class="target-test" data-test-target="${esc(target.id)}"><ha-icon icon="mdi:send-check-outline"></ha-icon>${this.t('testTarget')}</button></div>`).join(''):`<div class="no-targets"><ha-icon icon="mdi:bell-off-outline"></ha-icon>${this.t('noTargets')}</div>`;
+    const targetHtml=targets.length?targets.map(target=>`<div class="notify-target configurable-target"><input type="checkbox" data-notify-target aria-label="${esc(target.original_name||target.name)}" value="${esc(target.id)}" ${selected.has(target.id)?'checked':''}><span class="target-identity"><b><i class="recipient-dot" style="--recipient-color:${esc(target.color)}"></i>${esc(target.original_name||target.name)}</b><small>${esc(target.detail)}</small></span><em>${target.type==='entity'?'Entity':'Service'}</em><div class="target-controls"><label class="target-name">${this.t('recipientName')}<input data-target-name="${esc(target.id)}" maxlength="80" value="${esc(target.name)}" placeholder="${esc(target.original_name||target.name)}"></label><label class="target-color" title="${this.t('recipientColor')}"><span>${this.t('recipientColor')}</span><input data-target-color="${esc(target.id)}" type="color" value="${esc(target.color||'#d7ad52')}"></label><button type="button" class="target-test" data-test-target="${esc(target.id)}" aria-label="${this.t('testTarget')}: ${esc(target.original_name||target.name)}"><ha-icon icon="mdi:send-check-outline"></ha-icon>${this.t('testTarget')}</button></div></div>`).join(''):`<div class="no-targets"><ha-icon icon="mdi:bell-off-outline"></ha-icon>${this.t('noTargets')}</div>`;
     return `<div class="title-row"><div><h2>${this.t('settings')}</h2><p>${this.t('themeHint')}</p></div></div><section class="settings-grid">
       <article class="card form-card"><h3><ha-icon icon="mdi:database-clock-outline"></ha-icon>${this.t('history')}</h3><label>${this.t('historyDays')}<input id="history-days" type="number" min="1" max="3650" value="${s.history_days}"></label><label>${this.t('historyLimit')}<input id="history-limit" type="number" min="100" max="100000" value="${s.history_limit}"></label><label>${this.t('startupDelay')}<input id="startup-delay" type="number" min="0" max="600" value="${s.startup_delay??60}"><small>${this.t('startupDelayHint')}</small></label></article>
       <article class="card form-card notify-settings"><h3><ha-icon icon="mdi:send-outline"></ha-icon>${this.t('forwarding')}</h3><p>${this.t('forwardingHint')}</p><label class="setting-check"><input id="notifications-enabled" type="checkbox" ${s.notifications_enabled?'checked':''}>${this.t('enableForwarding')}</label><h4>${this.t('severities')}</h4><div class="severity-options"><label><input id="notify-info" type="checkbox" ${s.notify_info?'checked':''}>${this.t('info')}</label><label><input id="notify-warning" type="checkbox" ${s.notify_warning?'checked':''}>${this.t('warning')}</label><label><input id="notify-critical" type="checkbox" ${s.notify_critical?'checked':''}>${this.t('critical')}</label><label><input id="notify-resolved" type="checkbox" ${s.notify_resolved?'checked':''}>${this.t('resolvedMessages')}</label></div><h4>${this.t('targets')}</h4><div class="notify-targets">${targetHtml}</div></article>
@@ -597,6 +603,78 @@ const events=[...new Set(this._data.history.map(h=>h.event).filter(Boolean))];
     tr[data-rule-row][data-status="alarm"] td:first-child{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--danger),transparent 18%)}
     :host([data-light]) tr[data-rule-row][data-status="alarm"]{background:color-mix(in srgb,var(--danger),white 93%)}
     @media(max-width:700px){.table-card tr[data-rule-row][data-status="alarm"]{background:color-mix(in srgb,var(--danger),var(--surface) 91%);border-color:color-mix(in srgb,var(--danger),transparent 52%);box-shadow:inset 3px 0 0 color-mix(in srgb,var(--danger),transparent 12%)}.table-card tr[data-rule-row][data-status="alarm"] td:first-child{box-shadow:none}}
+    /* RoomControl: shared warm glass surfaces, interior backdrop and restrained gold. */
+    :host{--gold:#b99a60;--gold2:#d6bd83;--bg:#171512;--surface:#343430;--surface2:#41413a;--line:rgba(240,231,211,.24);--text:#f4f2ed;--muted:#c3c0b7;--danger:#eb9b8b;--green:#b8c9a6;--blue:#a8c1cd;--violet:#c2b1d0;--glass:radial-gradient(ellipse 42% 85% at 21% 95%,rgba(211,133,50,.22),transparent 80%),radial-gradient(ellipse 46% 90% at 83% 96%,rgba(184,118,52,.16),transparent 82%),radial-gradient(ellipse 56% 70% at 8% 3%,rgba(229,228,220,.13),transparent 78%),linear-gradient(130deg,rgba(96,95,88,.29),rgba(54,55,54,.31) 54%,rgba(79,64,52,.32));--glass-shadow:0 17px 38px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.27);background:linear-gradient(90deg,rgba(7,8,8,.24),rgba(9,9,8,.42) 48%,rgba(8,7,6,.2)),url('/nodarion_pager_static/room-interior.png') center / cover fixed,#171512;font-family:Roboto,Arial,sans-serif;color-scheme:dark;padding:24px clamp(14px,4vw,64px) 60px}
+    :host([data-light]){--gold:#94703a;--gold2:#886731;--bg:#e5e5dd;--surface:#f2f1eb;--surface2:#f9f8f2;--line:rgba(104,96,77,.23);--text:#303b38;--muted:#59645c;--danger:#af5145;--green:#527553;--blue:#4b7588;--violet:#806394;--glass:linear-gradient(130deg,rgba(249,251,250,.76),rgba(237,242,240,.65));--glass-shadow:0 12px 28px rgba(46,59,66,.13),inset 0 1px rgba(255,255,255,.95);color-scheme:light;background:linear-gradient(115deg,rgba(224,232,229,.65),rgba(237,231,216,.62)),url('/nodarion_pager_static/room-background.png') center / cover fixed,#e5e5dd}
+    .app{max-width:1380px;min-height:calc(100vh - 84px);margin:auto;padding:28px 30px;border:1px solid var(--line);border-radius:25px;background:radial-gradient(ellipse 40% 42% at 18% 67%,rgba(205,130,53,.2),transparent 77%),linear-gradient(125deg,rgba(43,44,43,.64),rgba(30,32,32,.61) 51%,rgba(51,41,33,.63));box-shadow:0 28px 76px rgba(0,0,0,.43),inset 0 1px rgba(255,255,255,.24);backdrop-filter:blur(24px) saturate(126%);-webkit-backdrop-filter:blur(24px) saturate(126%)}
+    :host([data-light]) .app{background:var(--glass);box-shadow:var(--glass-shadow)}
+    header{height:auto;min-height:78px;padding:0 0 22px;border:0;gap:20px}.brand{gap:13px}.brand h1{font-size:clamp(25px,3vw,34px);letter-spacing:-1px;font-weight:550;line-height:1.15}.brand h1 em{color:inherit;font-weight:550}.brand span,.modal-head span{color:var(--gold2);font-size:9px;letter-spacing:1.6px;font-weight:650}.brand p{font-size:12px}.brand-mark{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.08);box-shadow:inset 0 1px rgba(255,255,255,.18);color:var(--gold2)}.brand-mark svg{width:34px;height:34px}.pager-body{fill:transparent;stroke:var(--gold2);stroke-width:2}.pager-screen,.brand-mark circle{fill:var(--gold2)}.pager-wave{stroke:var(--surface)}
+    nav{padding:7px;margin-bottom:25px;border:1px solid var(--line);border-radius:18px;background:var(--glass);box-shadow:inset 0 1px rgba(255,255,255,.16);overflow-x:auto;scrollbar-width:thin}nav button{flex:none;font-weight:500;border-radius:12px}nav button.active{background:rgba(185,154,96,.18);color:var(--gold2)}nav button:hover{background:rgba(185,154,96,.12)}main{padding:0;max-width:none}.title-row h2{font-size:23px;font-weight:500;letter-spacing:-.4px}.title-row p{font-size:12px}.engine{font-size:12px;font-weight:500;border-radius:16px}
+    .card,.metric,.engine,.editor,.chart-dialog,.confirm-dialog,.toast{background:var(--glass);border-color:var(--line);box-shadow:var(--glass-shadow);backdrop-filter:blur(22px) saturate(120%);-webkit-backdrop-filter:blur(22px) saturate(120%);border-radius:20px}.metric{padding:18px;min-height:112px}.metric strong{font-weight:500;font-size:32px}.metric>ha-icon{background:rgba(255,255,255,.05)}.card-head h3,.form-card h3{color:var(--gold2);font-weight:500}.card-head{background:rgba(255,255,255,.025)}.primary,.secondary{font-weight:500;border:1px solid var(--line);border-radius:12px;box-shadow:inset 0 1px rgba(255,255,255,.16)}.primary{background:linear-gradient(145deg,rgba(190,150,80,.32),rgba(160,120,57,.22));color:var(--text);border-color:rgba(185,154,96,.5)}.secondary{background:rgba(255,255,255,.065)}button:hover{filter:brightness(1.08)}button:focus-visible{outline:2px solid var(--gold2);outline-offset:3px}input:focus,select:focus{box-shadow:0 0 0 2px rgba(185,154,96,.2)}input,select,.color-field,.entity-search input{background:rgba(15,17,15,.25);border-color:var(--line);border-radius:11px}:host([data-light]) input,:host([data-light]) select,:host([data-light]) .color-field{background:rgba(255,255,255,.55)}select option{background:var(--surface);color:var(--text)}input[type='checkbox'],input[type='radio']{accent-color:var(--gold)}
+    .modal{background:rgba(9,10,8,.58);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:24px}.editor,.chart-dialog,.confirm-dialog{background:radial-gradient(ellipse at 10% 100%,rgba(168,116,53,.19),transparent 65%),linear-gradient(125deg,rgba(61,62,57,.94),rgba(36,38,36,.94) 55%,rgba(65,53,41,.94));border:1px solid var(--line)}:host([data-light]) .editor,:host([data-light]) .chart-dialog,:host([data-light]) .confirm-dialog{background:linear-gradient(130deg,rgba(249,251,246,.97),rgba(232,234,224,.96))}.modal-head h2{font-weight:500;letter-spacing:-.5px}.modal-head,.modal-actions,.wizard-progress,.wizard-summary{background:rgba(255,255,255,.035);border-color:var(--line)}.wizard-summary{background:rgba(185,154,96,.08)}.wizard-progress button.active{background:rgba(185,154,96,.16);color:var(--gold2)}.wizard-progress button.active i{background:var(--gold2);color:var(--bg)}
+    .notify-target,.wizard-recipient,.selected-entity,.entity-preview,.rule-preview,.review-card,.activity-condition,.activity-targets,.activity-options,.wizard-optional,.advanced,.standard-note{background:rgba(255,255,255,.045);border-color:var(--line);border-radius:13px}.entity-results,.activity-entity-results{background:var(--surface);border-color:var(--line)}.entity-option{background:transparent}.entity-option:hover,.entity-option.selected{background:rgba(185,154,96,.13)}.activity-preview{background:linear-gradient(130deg,#383831,#252722);border:1px solid rgba(185,154,96,.32)}.danger-button{color:var(--danger);background:rgba(231,120,105,.12);border-color:var(--danger)}.center{background:transparent}.toast{background:var(--surface)}
+    @media(max-width:900px){:host{padding:16px 16px 45px}.app{padding:22px 20px;border-radius:22px}header{padding:0 0 18px}.brand h1{font-size:27px}nav{padding:6px;margin-bottom:20px}}
+    @media(max-width:700px){:host{padding:10px 9px 32px;background-attachment:scroll}.app{padding:18px 13px;min-height:calc(100dvh - 42px);border-radius:20px}header{height:auto;gap:10px}.brand{gap:9px}.brand h1{font-size:24px}.brand-mark{width:36px;height:36px;border-radius:11px}.brand-mark svg{width:28px;height:28px}.brand p{font-size:10px}.engine{padding:8px;font-size:10px}nav{padding:5px;gap:3px}nav button{padding:9px 10px;font-size:12px}.title-row{gap:12px;flex-wrap:wrap}.title-row h2{font-size:21px}.metric{padding:13px;border-radius:15px}.metric strong{font-size:28px}.modal{padding:8px}.editor,.chart-dialog,.confirm-dialog{border-radius:18px;max-height:calc(100dvh - 16px)}.modal-head{padding:17px 16px}.modal-actions{padding:12px 14px}.activity-editor{width:100%}.toast{left:14px;right:14px;bottom:14px}.table-card{background:transparent;border:0;box-shadow:none;backdrop-filter:none}.table-card tr[data-rule-row],.table-card tbody tr{background:var(--glass);border-color:var(--line);box-shadow:var(--glass-shadow);border-radius:16px}.table-card tr[data-rule-row][data-status='alarm']{background:linear-gradient(130deg,rgba(120,65,50,.48),rgba(54,55,50,.65));border-color:var(--danger)}:host([data-light]) .table-card tr[data-rule-row][data-status='alarm']{background:rgba(255,228,220,.8)}}
+    .grid .alert-row{flex-wrap:wrap;align-items:flex-start}.grid .alert-row .grow{flex:1 1 220px;display:flex;flex-direction:column;align-items:stretch;gap:10px}.grid .alert-row time{margin-left:auto}.grid .alert-row .row-actions{margin-left:auto}.grid .alert-cause{min-width:0}.grid .alert-cause strong{overflow-wrap:anywhere}
+    :host([data-light]) .primary,:host([data-light]) .primary:hover{background:linear-gradient(145deg,rgba(190,150,80,.22),rgba(160,120,57,.12));color:var(--text);border-color:rgba(148,112,58,.4);box-shadow:inset 0 1px rgba(255,255,255,.7)}:host([data-light]) .brand-mark{background:rgba(255,255,255,.25);border-color:var(--line);box-shadow:inset 0 1px rgba(255,255,255,.6)}:host([data-light]) .pager-body{fill:transparent;stroke:var(--gold2)}:host([data-light]) .pager-screen,:host([data-light]) .brand-mark circle{fill:var(--gold2)}:host([data-light]) .pager-wave{stroke:var(--surface)}:host([data-light]) .entity-link{color:var(--gold2)}:host([data-light]) nav button.active{background:rgba(185,154,96,.18);color:var(--gold2)}:host([data-light]) .toggle.on{background:rgba(185,154,96,.25);border-color:var(--gold)}:host([data-light]) .toggle.on i{background:var(--gold2)}:host([data-light]) .severity-tag.warning{color:var(--gold2)}
+    /* Adapt rule rows to the available content width, including the HA sidebar. */
+    main{container-type:inline-size;container-name:pager-content}
+    @container pager-content (max-width:1100px){.table-card:has([data-rule-row]){overflow:visible;background:none;border:0}.table-card:has([data-rule-row]) table{display:block;min-width:0}.table-card:has([data-rule-row]) thead{display:none}.table-card:has([data-rule-row]) tbody{display:grid;gap:12px}.table-card:has([data-rule-row]) tr[data-rule-row]{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr) auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;gap:10px 12px;overflow:hidden}.table-card:has([data-rule-row]) tr[data-rule-row] td{border:0;padding:0;min-width:0;overflow-wrap:anywhere}.table-card:has([data-rule-row]) tr[data-rule-row] td:nth-child(1){grid-column:3;grid-row:1}.table-card:has([data-rule-row]) tr[data-rule-row] td:nth-child(2){grid-column:1/3;grid-row:1}.table-card:has([data-rule-row]) tr[data-rule-row] td:nth-child(3){grid-column:1}.table-card:has([data-rule-row]) tr[data-rule-row] td:nth-child(4){grid-column:2}.table-card:has([data-rule-row]) tr[data-rule-row] td:nth-child(5){grid-column:3;white-space:nowrap;align-self:center}.table-card:has([data-rule-row]) tr[data-rule-row] td:nth-child(6){grid-column:1}.table-card:has([data-rule-row]) tr[data-rule-row] td:nth-child(7){grid-column:2}.table-card:has([data-rule-row]) tr[data-rule-row] td:nth-child(8){grid-column:3}.table-card:has([data-rule-row]) tr[data-rule-row] td:nth-child(9){grid-column:1/4;text-align:right;border-top:1px solid var(--line);padding-top:10px}div.rule-filterbar{grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%;border-radius:14px;margin-bottom:12px}div.rule-filterbar>label{grid-column:1/-1}.filter-reset{justify-self:stretch;width:100%}.table-card:has([data-rule-row]){box-shadow:none;backdrop-filter:none}.table-card:has([data-rule-row]) tr[data-rule-row]{background:var(--glass);border-color:var(--line);box-shadow:var(--glass-shadow);border-radius:16px}.recipient-cell span{white-space:normal;overflow-wrap:anywhere}.table-card tr[data-rule-row][data-status='alarm']{background:linear-gradient(130deg,rgba(120,65,50,.48),rgba(54,55,50,.65));border-color:var(--danger)}.table-card tr[data-rule-row][data-status='alarm'] td:first-child{box-shadow:none}:host([data-light]) .table-card tr[data-rule-row][data-status='alarm']{background:rgba(255,228,220,.8)}}
+    @container pager-content (max-width:540px){div.rule-filterbar{grid-template-columns:minmax(0,1fr)!important}}
+    /* Recipient cards: identity above the editable profile, with no shared text columns. */
+    .notify-settings{min-width:0;container-type:inline-size}
+    .notify-settings>.notify-targets{gap:10px;max-height:520px;padding-right:4px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+    .notify-settings .configurable-target{grid-template-columns:20px minmax(0,1fr) auto!important;gap:8px 10px;padding:14px;border-radius:15px;background:rgba(255,255,255,.035);transition:border-color .15s,background .15s}
+    .configurable-target:has(>input:checked){border-color:rgba(185,154,96,.48);background:rgba(185,154,96,.065)}
+    .configurable-target>input{grid-column:1;grid-row:1;margin:0;width:16px;height:16px;align-self:start;margin-top:3px;cursor:pointer}
+    .configurable-target .target-identity{grid-column:2;grid-row:1;min-width:0}
+    .configurable-target .target-identity b{display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:550;line-height:1.4;overflow-wrap:anywhere}
+    .configurable-target .recipient-dot{flex:none;margin:0;width:8px;height:8px}
+    .configurable-target .target-identity small{margin-top:3px;font-size:10px;line-height:1.4;overflow-wrap:anywhere;opacity:.8}
+    .configurable-target>em{grid-column:3;grid-row:1;align-self:start;margin-top:1px;font-size:8px;letter-spacing:.5px;padding:4px 6px}
+    .configurable-target .target-controls{grid-column:2/-1;display:grid;grid-template-columns:minmax(0,1fr) 44px auto;gap:10px;align-items:end;min-width:0;padding-top:4px}
+    .configurable-target .target-controls label{grid-column:auto;grid-row:auto;min-width:0;gap:5px;font-size:10px;font-weight:500;color:var(--muted)}
+    .configurable-target .target-name input{width:100%;min-width:0;height:38px;margin:0;padding:8px 10px;font-size:12px}
+    .configurable-target .target-color span{font-size:9px;white-space:nowrap}
+    .configurable-target .target-color input{width:44px;height:38px;border-radius:10px;padding:5px}
+    .configurable-target .target-test{min-height:38px;padding:8px 12px;justify-content:center;font-size:12px;font-weight:500;border-radius:10px;white-space:nowrap}
+    @container(max-width:360px){.notify-settings .configurable-target{padding:12px;gap:8px}.configurable-target .target-controls{grid-column:1/-1;grid-template-columns:minmax(0,1fr) 40px auto;gap:7px}.configurable-target .target-color input{width:40px}.configurable-target .target-test{padding:8px}.configurable-target>em{font-size:7px}}
+    /* Dialog refinement: a consistent spacing rhythm and content-sized activity wizard. */
+    .modal:has(.wizard){padding:24px}
+    .wizard{border-radius:24px;max-height:calc(100dvh - 48px);box-shadow:0 30px 100px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.18)}
+    .wizard .modal-head{padding:24px 28px;align-items:center;background:transparent}
+    .wizard .modal-head h2{margin:6px 0 0;font-size:23px;font-weight:500}
+    .wizard .modal-head>button{display:grid;place-items:center;width:36px;height:36px;padding:0;border:1px solid var(--line);border-radius:50%;background:rgba(255,255,255,.035);font-size:18px;cursor:pointer}
+    .wizard-progress{padding:14px 28px;gap:12px;background:rgba(0,0,0,.07)}
+    .wizard-progress button{padding:10px 12px;border:1px solid transparent;border-radius:12px;font-size:13px;font-weight:500}
+    .wizard-progress button.active{background:rgba(185,154,96,.09);border-color:rgba(185,154,96,.26)}
+    .wizard-progress button i{width:26px;height:26px;font-size:11px}
+    .wizard-progress button.active i{background:rgba(185,154,96,.18);color:var(--gold2);border-color:rgba(185,154,96,.5)}
+    .wizard .modal-actions{padding:18px 28px;background:rgba(255,255,255,.025);align-items:center}
+    .wizard .modal-actions button{min-height:42px;padding:10px 18px;border-radius:12px}
+    .activity-editor{width:min(980px,100%);height:auto;max-height:calc(100dvh - 48px)}
+    .activity-editor .wizard-content{flex:0 1 auto;min-height:0;overflow:auto}
+    .activity-page{padding:28px}
+    .activity-page .wizard-intro{margin-bottom:24px}
+    .activity-page .wizard-intro h3{font-size:19px;font-weight:500;letter-spacing:-.3px}
+    .activity-page .wizard-intro p{margin-top:7px;font-size:13px;line-height:1.5}
+    .activity-page>label{margin:0 0 24px;gap:8px;font-weight:500}
+    .activity-page .wizard-fields{gap:20px}
+    .activity-page .wizard-fields>label{margin:0;gap:8px;font-weight:500}
+    .activity-condition{padding:20px;border-radius:17px;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.02))}
+    .activity-condition.start,.activity-condition.end{border-top:1px solid var(--line)}
+    .activity-condition-title{gap:12px;margin-bottom:20px}
+    .activity-condition-title>ha-icon{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:12px;background:rgba(184,201,166,.08);--mdc-icon-size:23px}
+    .activity-condition.end .activity-condition-title>ha-icon{background:rgba(194,177,208,.08)}
+    .activity-condition-title b{font-size:14px;font-weight:500}
+    .activity-condition-title small{margin-top:4px;font-size:11px;line-height:1.4}
+    .activity-condition label{margin:0;gap:8px;font-weight:500;font-size:11px}
+    .activity-condition .condition-pair{margin-top:16px;gap:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+    .activity-editor input:not([type=checkbox]):not([type=color]),.activity-editor select{min-width:0;min-height:42px;padding-top:10px;padding-bottom:10px;font-weight:400}
+    .activity-editor .activity-entity-picker>ha-icon{top:12px}
+    .activity-final-grid{gap:20px;margin-top:24px}
+    .activity-review{margin-top:24px;gap:12px}
+    @media(max-width:700px){.modal:has(.wizard){padding:10px}.wizard{max-height:calc(100dvh - 20px);border-radius:20px}.wizard .modal-head{padding:20px}.wizard .modal-head h2{font-size:21px}.wizard-progress{padding:12px 16px;gap:6px}.wizard-progress button{padding:9px 6px}.activity-progress button span{display:block;font-size:11px}.activity-progress button{gap:6px}.activity-page{padding:22px 20px}.activity-page .wizard-fields{gap:16px}.activity-condition{padding:16px}.activity-editor{height:auto;max-height:calc(100dvh - 20px)}.wizard .modal-actions{padding:14px 20px}.activity-final-grid{gap:16px}}
   `; }
 }
 

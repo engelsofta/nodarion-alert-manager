@@ -101,7 +101,7 @@ async def _async_register_panel(hass: HomeAssistant) -> None:
         frontend_url_path=PANEL_URL,
         config={"_panel_custom": {
             "name": "engelsoft-nodarion-pager-panel",
-            "module_url": f"{STATIC_URL}/nodarion-pager-panel.js?v={VERSION}",
+            "module_url": f"{STATIC_URL}/nodarion-pager-panel.js?v={VERSION}-roomcontrol-5",
             "embed_iframe": False,
             "trust_external_script": False,
         }},
